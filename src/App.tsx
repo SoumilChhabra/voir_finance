@@ -1,4 +1,4 @@
-import { Redirect, Route } from 'react-router-dom';
+import { Redirect, Route } from "react-router-dom";
 import {
   IonApp,
   IonIcon,
@@ -7,81 +7,113 @@ import {
   IonTabBar,
   IonTabButton,
   IonTabs,
-  setupIonicReact
-} from '@ionic/react';
-import { IonReactRouter } from '@ionic/react-router';
-import { ellipse, square, triangle } from 'ionicons/icons';
-import Tab1 from './pages/Tab1';
-import Tab2 from './pages/Tab2';
-import Tab3 from './pages/Tab3';
+  setupIonicReact,
+  IonFab,
+  IonFabButton,
+} from "@ionic/react";
+import { IonReactRouter } from "@ionic/react-router";
+import { add, list, card, pricetags } from "ionicons/icons";
+import { StoreProvider } from "./data/store";
+import AuthGate from "./auth/AuthGate";
+import { useEffect } from "react";
+import { useLocation } from "react-router";
 
-/* Core CSS required for Ionic components to work properly */
-import '@ionic/react/css/core.css';
+import All from "./pages/All";
+import Accounts from "./pages/Accounts";
+import Categories from "./pages/Categories";
+import AddAccount from "./pages/AddAccount";
+import AddTransaction from "./pages/AddTransaction";
+import AccountDetail from "./pages/AccountDetail";
+import CategoryDetail from "./pages/CategoryDetail";
+import AddCategory from "./pages/AddCategory";
+import EditTransaction from "./pages/EditTransaction";
+import Background from "./components/Background";
+import Hero from "./components/Hero";
 
-/* Basic CSS for apps built with Ionic */
-import '@ionic/react/css/normalize.css';
-import '@ionic/react/css/structure.css';
-import '@ionic/react/css/typography.css';
-
-/* Optional CSS utils that can be commented out */
-import '@ionic/react/css/padding.css';
-import '@ionic/react/css/float-elements.css';
-import '@ionic/react/css/text-alignment.css';
-import '@ionic/react/css/text-transformation.css';
-import '@ionic/react/css/flex-utils.css';
-import '@ionic/react/css/display.css';
-
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
-
-/* import '@ionic/react/css/palettes/dark.always.css'; */
-/* import '@ionic/react/css/palettes/dark.class.css'; */
-import '@ionic/react/css/palettes/dark.system.css';
-
-/* Theme variables */
-import './theme/variables.css';
+import "@ionic/react/css/core.css";
+import "./theme/variables.css";
+import "./theme/global.css"; // <-- make sure this is imported
 
 setupIonicReact();
 
-const App: React.FC = () => (
-  <IonApp>
-    <IonReactRouter>
-      <IonTabs>
-        <IonRouterOutlet>
-          <Route exact path="/tab1">
-            <Tab1 />
-          </Route>
-          <Route exact path="/tab2">
-            <Tab2 />
-          </Route>
-          <Route path="/tab3">
-            <Tab3 />
-          </Route>
-          <Route exact path="/">
-            <Redirect to="/tab1" />
-          </Route>
-        </IonRouterOutlet>
-        <IonTabBar slot="bottom">
-          <IonTabButton tab="tab1" href="/tab1">
-            <IonIcon aria-hidden="true" icon={triangle} />
-            <IonLabel>Tab 1</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab2" href="/tab2">
-            <IonIcon aria-hidden="true" icon={ellipse} />
-            <IonLabel>Tab 2</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab3" href="/tab3">
-            <IonIcon aria-hidden="true" icon={square} />
-            <IonLabel>Tab 3</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
-      </IonTabs>
-    </IonReactRouter>
-  </IonApp>
-);
+function TitleUpdater() {
+  const location = useLocation();
+  useEffect(() => {
+    const map: Record<string, string> = {
+      "/all": "All",
+      "/accounts": "Accounts",
+      "/categories": "Categories",
+      "/account/": "Account",
+      "/category/": "Category",
+      "/add": "Add",
+      "/edit/": "Edit",
+    };
+    let label = "Voir";
+    for (const [prefix, name] of Object.entries(map)) {
+      if (location.pathname.includes(prefix)) {
+        label = `Voir — ${name}`;
+        break;
+      }
+    }
+    document.title = label;
+  }, [location.pathname]);
+  return null;
+}
 
-export default App;
+export default function App() {
+  useEffect(() => {
+    document.body.classList.add("dark");
+  }, []);
+
+  return (
+    <IonApp>
+      <Background />
+      <Hero />
+      <AuthGate>
+        <StoreProvider>
+          <IonReactRouter>
+            <TitleUpdater />
+            <IonTabs>
+              <IonRouterOutlet>
+                <Route path="/tabs/all" component={All} exact />
+                <Route path="/tabs/accounts" component={Accounts} exact />
+                <Route path="/tabs/categories" component={Categories} exact />
+                <Route path="/add" component={AddTransaction} exact />
+                <Route exact path="/">
+                  <Redirect to="/tabs/all" />
+                </Route>
+                <Route path="/add-account" component={AddAccount} exact />
+                <Route path="/add-category" component={AddCategory} exact />
+                <Route path="/account/:id" component={AccountDetail} exact />
+                <Route path="/category/:id" component={CategoryDetail} exact />
+                <Route path="/edit/:id" component={EditTransaction} exact />
+              </IonRouterOutlet>
+
+              <IonTabBar slot="bottom">
+                <IonTabButton tab="all" href="/tabs/all">
+                  <IonIcon icon={list} />
+                  <IonLabel>All</IonLabel>
+                </IonTabButton>
+                <IonTabButton tab="accounts" href="/tabs/accounts">
+                  <IonIcon icon={card} />
+                  <IonLabel>Accounts</IonLabel>
+                </IonTabButton>
+                <IonTabButton tab="categories" href="/tabs/categories">
+                  <IonIcon icon={pricetags} />
+                  <IonLabel>Categories</IonLabel>
+                </IonTabButton>
+              </IonTabBar>
+
+              {/* Floating + button visible on tab pages */}
+              <IonFab vertical="bottom" horizontal="end" slot="fixed">
+                <IonFabButton routerLink="/add">
+                  <IonIcon icon={add} />
+                </IonFabButton>
+              </IonFab>
+            </IonTabs>
+          </IonReactRouter>
+        </StoreProvider>
+      </AuthGate>
+    </IonApp>
+  );
+}

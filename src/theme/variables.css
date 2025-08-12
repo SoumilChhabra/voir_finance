@@ -1,2 +1,34 @@
-/* For information on how to create your own theme, please see:
-http://ionicframework.com/docs/theming/ */
+:root {
+  --ion-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  /* Accent palette (cool, fresh, but muted) */
+  --ion-color-primary: #7dd3fc; /* sky-300 */
+  --ion-color-primary-rgb: 125, 211, 252;
+  --ion-color-primary-contrast: #0b101a; /* dark text if used on light buttons */
+  --ion-color-primary-contrast-rgb: 11, 16, 26;
+
+  --ion-color-secondary: #5eead4; /* teal-300 */
+  --ion-color-secondary-rgb: 94, 234, 212;
+  --ion-color-tertiary: #a5b4fc; /* indigo-300 */
+
+  --ion-color-success: #34d399;
+  --ion-color-warning: #f59e0b;
+  --ion-color-danger: #f87171;
+
+  --ion-color-medium: #8fa1b3; /* slate-400 */
+  --ion-color-light: #0f172a; /* slate-900 */
+
+  /* Radii & shadows used in global.css */
+  --app-radius: 14px;
+  --app-shadow: 0 12px 36px rgba(2, 8, 23, 0.35);
+}
+
+/* Dark-first */
+body.dark {
+  --ion-background-color: #0b101a; /* deep charcoal-navy */
+  --ion-background-color-rgb: 11, 16, 26;
+  --ion-text-color: #e5e7eb; /* slate-200 */
+  --ion-card-background: #0f1624; /* darker card surface */
+  --ion-item-background: transparent;
+}
