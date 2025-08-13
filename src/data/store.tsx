@@ -31,6 +31,10 @@ type Store = {
   addCategory: (c: NewCategory) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   updateTransaction: (t: EditTxn) => Promise<void>;
+  updateAccount: (a: EditAccount) => Promise<void>;
+  deleteAccount: (id: string) => Promise<void>;
+  updateCategory: (c: EditCategory) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
 };
 
 type NewAccount = {
@@ -52,6 +56,8 @@ type NewTxn = {
 };
 
 type EditTxn = NewTxn & { id: string };
+type EditAccount = NewAccount & { id: string };
+type EditCategory = NewCategory & { id: string };
 
 const mapTxn = (r: any) => ({
   id: r.id,
@@ -230,6 +236,66 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
     await fetchTransactions();
   };
 
+  // --- Accounts ---
+  const updateAccount = async (a: EditAccount) => {
+    const { error } = await supabase
+      .from("accounts")
+      .update({
+        name: a.name.trim(),
+        type: a.type,
+        last4: a.last4?.slice(-4) || null,
+        currency: a.currency || "CAD",
+      })
+      .eq("id", a.id);
+
+    if (error) throw error;
+    await fetchAccounts(); // refresh list
+    await fetchTransactions(); // in case currency/type affects views
+  };
+
+  const deleteAccount = async (id: string) => {
+    // destructive: remove all transactions on this account
+    const delTx = await supabase
+      .from("transactions")
+      .delete()
+      .eq("account_id", id);
+    if (delTx.error) throw delTx.error;
+
+    const delAcct = await supabase.from("accounts").delete().eq("id", id);
+    if (delAcct.error) throw delAcct.error;
+
+    await refreshAll();
+  };
+
+  // --- Categories ---
+  const updateCategory = async (c: EditCategory) => {
+    const { error } = await supabase
+      .from("categories")
+      .update({
+        name: c.name.trim(),
+        color: c.color?.trim() || null,
+      })
+      .eq("id", c.id);
+
+    if (error) throw error;
+    await fetchCategories();
+  };
+
+  const deleteCategory = async (id: string) => {
+    // non-destructive: keep transactions, null the category
+    const upd = await supabase
+      .from("transactions")
+      .update({ category_id: null })
+      .eq("category_id", id);
+    if (upd.error) throw upd.error;
+
+    const del = await supabase.from("categories").delete().eq("id", id);
+    if (del.error) throw del.error;
+
+    await fetchCategories();
+    await fetchTransactions();
+  };
+
   const value = useMemo(
     () => ({
       accounts,
@@ -246,6 +312,10 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
       updateTransaction,
       addAccount,
       addCategory,
+      updateAccount,
+      deleteAccount,
+      updateCategory,
+      deleteCategory,
     }),
     [accounts, categories, transactions, dateRange, accountById, categoryById]
   );

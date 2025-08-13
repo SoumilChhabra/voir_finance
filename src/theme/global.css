@@ -280,6 +280,16 @@ ion-item {
   justify-content: center;
   padding: 24px; /* breathing room around the panel */
 }
+/* Darker modal backdrop */
+.dialog-modal::part(backdrop) {
+  background: rgba(
+    3,
+    10,
+    20,
+    0.72
+  ); /* increase last number toward 1 for more opaque */
+  backdrop-filter: blur(6px) saturate(1.05);
+}
 
 /* Centered, narrower, scrollable panel INSIDE the modal */
 .dialog-modal .app-panel.dialog {
@@ -292,7 +302,7 @@ ion-item {
   max-height: 90vh;
   overflow: visible;
   border-radius: 18px;
-  background: rgba(16, 23, 36, 0.9);
+  background: rgba(16, 23, 36, 0.96);
   border: 1px solid rgba(125, 211, 252, 0.18);
   box-shadow: 0 22px 70px rgba(2, 8, 23, 0.6),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -400,4 +410,22 @@ ion-alert.select-pop {
   --background: #0f172a;
   --ion-text-color: #e6eef8;
   --button-color: #7dd3fc;
+}
+
+/* Compact dark search in the panel header */
+.tx-search {
+  width: min(40vw, 300px);
+  --background: rgba(255, 255, 255, 0.04);
+  --color: #e6eef8;
+  --icon-color: #93c5fd;
+  --placeholder-color: #a9b8cc;
+  --border-radius: 10px;
+  --box-shadow: none;
+}
+.tx-search.sc-ion-searchbar-ios-h,
+.tx-search.sc-ion-searchbar-md-h {
+  padding: 0;
+}
+.tx-search .searchbar-input {
+  font-size: 14px;
 }
