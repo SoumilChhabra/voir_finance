@@ -20,7 +20,9 @@ import { useStore } from "../data/store";
 import { useEffect, useState } from "react";
 import { getPrefStr, setPrefStr } from "../utils/prefs";
 
-export default function AddTransaction() {
+type AddTxProps = { onClose?: () => void; asPage?: boolean };
+
+export default function AddTransaction(props: AddTxProps) {
   const history = useHistory();
   const { accounts, categories, addTransaction } = useStore();
   const hasBasics = accounts.length > 0 && categories.length > 0;
@@ -49,6 +51,11 @@ export default function AddTransaction() {
     accountId &&
     categoryId;
 
+  const handleClose = () => {
+    if (props?.onClose) props.onClose();
+    else history.goBack();
+  };
+
   const onSave = async () => {
     if (!canSave) return;
     await addTransaction({
@@ -61,120 +68,128 @@ export default function AddTransaction() {
     });
     await setPrefStr("last_account_id", accountId);
     await setPrefStr("last_category_id", categoryId);
-    history.goBack();
+    handleClose();
   };
 
-  return (
-    // AddTransaction.tsx (only the render part shown for brevity)
-    <IonPage>
-      <IonContent fullscreen scrollY={false}>
-        <Shell
-          title="Add Transaction"
-          actions={
-            <IonButton fill="outline" onClick={() => history.goBack()}>
-              <IonIcon icon={close} slot="start" /> Close
-            </IonButton>
-          }
-        >
-          {!hasBasics ? (
-            // ... unchanged
-            <></>
-          ) : (
-            <>
-              <IonList inset>
-                <IonItem>
-                  <IonLabel position="stacked">Amount (CAD)</IonLabel>
-                  <IonInput
-                    type="number"
-                    inputmode="decimal"
-                    placeholder="0.00"
-                    value={amount}
-                    onIonInput={(e) => setAmount(String(e.detail.value ?? ""))}
-                  />
-                </IonItem>
+  // Shared UI for both page and modal
+  const Body = (
+    <Shell
+      title="Add Transaction"
+      className="dialog"
+      actions={
+        <IonButton fill="outline" onClick={handleClose}>
+          <IonIcon icon={close} slot="start" /> Close
+        </IonButton>
+      }
+    >
+      {!hasBasics ? (
+        <></>
+      ) : (
+        <>
+          <IonList inset>
+            <IonItem>
+              <IonLabel position="stacked">Amount (CAD)</IonLabel>
+              <IonInput
+                type="number"
+                inputmode="decimal"
+                placeholder="0.00"
+                value={amount}
+                onIonInput={(e) => setAmount(String(e.detail.value ?? ""))}
+              />
+            </IonItem>
 
-                <IonItem>
-                  <IonLabel>Account</IonLabel>
-                  <IonSelect
-                    value={accountId}
-                    onIonChange={(e) => setAccountId(e.detail.value)}
-                  >
-                    {accounts.map((a) => (
-                      <IonSelectOption key={a.id} value={a.id}>
-                        {a.name}
-                        {a.last4 ? ` •••• ${a.last4}` : ""}
-                      </IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </IonItem>
+            <IonItem>
+              <IonLabel>Account</IonLabel>
+              <IonSelect
+                interface="popover"
+                interfaceOptions={{ cssClass: "select-pop" }} // for styling
+                value={accountId}
+                onIonChange={(e) => setAccountId(e.detail.value)}
+              >
+                {accounts.map((a) => (
+                  <IonSelectOption key={a.id} value={a.id}>
+                    {a.name}
+                    {a.last4 ? ` •••• ${a.last4}` : ""}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonItem>
 
-                <IonItem>
-                  <IonLabel>Category</IonLabel>
-                  <IonSelect
-                    value={categoryId}
-                    onIonChange={(e) => setCategoryId(e.detail.value)}
-                  >
-                    {categories.map((c) => (
-                      <IonSelectOption key={c.id} value={c.id}>
-                        {c.name}
-                      </IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </IonItem>
+            <IonItem>
+              <IonLabel>Category</IonLabel>
+              <IonSelect
+                interface="popover"
+                interfaceOptions={{ cssClass: "select-pop" }}
+                value={categoryId}
+                onIonChange={(e) => setCategoryId(e.detail.value)}
+              >
+                {categories.map((c) => (
+                  <IonSelectOption key={c.id} value={c.id}>
+                    {c.name}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonItem>
 
-                {/* Date row (button opens a dark modal date picker) */}
-                <IonItem>
-                  <IonLabel>Date</IonLabel>
-                  <div slot="end">
-                    <IonDatetimeButton
-                      datetime="add-date"
-                      className="dt-trigger"
-                    />
-                  </div>
-                </IonItem>
-
-                <IonModal keepContentsMounted className="dt-pop">
-                  <IonDatetime
-                    id="add-date"
-                    presentation="date"
-                    value={date}
-                    onIonChange={(e) =>
-                      setDate(String(e.detail.value).slice(0, 10))
-                    }
-                  />
-                </IonModal>
-
-                <IonItem>
-                  <IonLabel position="stacked">Merchant</IonLabel>
-                  <IonInput
-                    value={merchant}
-                    onIonInput={(e) =>
-                      setMerchant(String(e.detail.value ?? ""))
-                    }
-                  />
-                </IonItem>
-
-                <IonItem>
-                  <IonLabel position="stacked">Notes</IonLabel>
-                  <IonInput
-                    value={notes}
-                    onIonInput={(e) => setNotes(String(e.detail.value ?? ""))}
-                  />
-                </IonItem>
-              </IonList>
-
-              <div className="form-actions">
-                <IonButton fill="outline" onClick={() => history.goBack()}>
-                  <IonIcon icon={close} slot="start" /> Cancel
-                </IonButton>
-                <IonButton onClick={onSave} disabled={!canSave}>
-                  <IonIcon icon={save} slot="start" /> Save
-                </IonButton>
+            {/* Date */}
+            <IonItem>
+              <IonLabel>Date</IonLabel>
+              <div slot="end">
+                <IonDatetimeButton datetime="add-date" className="dt-trigger" />
               </div>
-            </>
-          )}
-        </Shell>
-      </IonContent>
-    </IonPage>
+            </IonItem>
+
+            <IonModal keepContentsMounted className="dt-pop">
+              <IonDatetime
+                id="add-date"
+                presentation="date"
+                value={date}
+                onIonChange={(e) =>
+                  setDate(String(e.detail.value).slice(0, 10))
+                }
+              />
+            </IonModal>
+
+            <IonItem>
+              <IonLabel position="stacked">Merchant</IonLabel>
+              <IonInput
+                value={merchant}
+                onIonInput={(e) => setMerchant(String(e.detail.value ?? ""))}
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="stacked">Notes</IonLabel>
+              <IonInput
+                value={notes}
+                onIonInput={(e) => setNotes(String(e.detail.value ?? ""))}
+              />
+            </IonItem>
+          </IonList>
+
+          <div className="form-actions">
+            <IonButton fill="outline" onClick={handleClose}>
+              <IonIcon icon={close} slot="start" /> Cancel
+            </IonButton>
+            <IonButton onClick={onSave} disabled={!canSave}>
+              <IonIcon icon={save} slot="start" /> Save
+            </IonButton>
+          </div>
+        </>
+      )}
+    </Shell>
   );
+
+  // Page vs modal
+  if (props.asPage) {
+    return (
+      <IonPage>
+        <IonContent fullscreen scrollY={false}>
+          {Body}
+        </IonContent>
+      </IonPage>
+    );
+  }
+  // Modal version: no IonPage/IonContent wrapper
+  return Body;
 }

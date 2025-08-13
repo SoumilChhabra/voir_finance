@@ -1,8 +1,5 @@
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonList,
   IonItem,
@@ -13,22 +10,23 @@ import {
   IonFabButton,
   IonIcon,
   IonButton,
-  IonButtons,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
+  useIonAlert,
+  useIonToast,
+  IonModal,
 } from "@ionic/react";
 import { add, downloadOutline } from "ionicons/icons";
 import DateRangeButton from "../components/DateRangeButton";
 import { useStore } from "../data/store";
 import { formatCurrency } from "../utils/money";
 import { formatDateLocal } from "../utils/date";
-import {
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  useIonAlert,
-  useIonToast,
-} from "@ionic/react";
 import { downloadCsv, toCsv } from "../utils/csv";
 import Shell from "../components/Shell";
+import { useState } from "react";
+import AddTransaction from "./AddTransaction";
+import EditTransaction from "./EditTransaction";
 
 export default function All() {
   const {
@@ -42,6 +40,10 @@ export default function All() {
   const totalCents = txns.reduce((s, t) => s + t.amountCents, 0);
   const [presentAlert] = useIonAlert();
   const [toast] = useIonToast();
+
+  // modal state
+  const [showAdd, setShowAdd] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const confirmDelete = (id: string) =>
     presentAlert({
@@ -70,10 +72,10 @@ export default function All() {
 
   const exportCurrentRange = () => {
     const rows = transactions
-      .slice() // copy if needed
+      .slice()
       .sort((a, b) => (a.date < b.date ? -1 : 1))
       .map((t) => ({
-        Date: t.date, // keep YYYY-MM-DD for sheets
+        Date: t.date,
         Merchant: t.merchant ?? "",
         Amount: (t.amountCents / 100).toFixed(2),
         Currency: t.currency,
@@ -108,10 +110,11 @@ export default function All() {
               {formatCurrency(totalCents)}
             </IonNote>
           </IonItem>
+
           {txns.length === 0 && (
             <div style={{ padding: 24, textAlign: "center", opacity: 0.8 }}>
               <p>No transactions in this date range.</p>
-              <IonButton routerLink="/add" size="default">
+              <IonButton size="default" onClick={() => setShowAdd(true)}>
                 Add a transaction
               </IonButton>
             </div>
@@ -148,8 +151,9 @@ export default function All() {
                       {formatCurrency(t.amountCents, t.currency)}
                     </IonNote>
                   </IonItem>
+
                   <IonItemOptions side="start">
-                    <IonItemOption routerLink={`/edit/${t.id}`}>
+                    <IonItemOption onClick={() => setEditId(t.id)}>
                       Edit
                     </IonItemOption>
                   </IonItemOptions>
@@ -167,10 +171,32 @@ export default function All() {
           </IonList>
 
           <IonFab vertical="bottom" horizontal="end" slot="fixed">
-            <IonFabButton routerLink="/add">
+            <IonFabButton onClick={() => setShowAdd(true)}>
               <IonIcon icon={add} />
             </IonFabButton>
           </IonFab>
+
+          {/* Add modal */}
+          <IonModal
+            isOpen={showAdd}
+            onDidDismiss={() => setShowAdd(false)}
+            className="dialog-modal"
+            backdropDismiss
+          >
+            <AddTransaction onClose={() => setShowAdd(false)} />
+          </IonModal>
+
+          {/* Edit modal */}
+          <IonModal
+            isOpen={!!editId}
+            onDidDismiss={() => setEditId(null)}
+            className="dialog-modal"
+            backdropDismiss
+          >
+            {editId && (
+              <EditTransaction id={editId} onClose={() => setEditId(null)} />
+            )}
+          </IonModal>
         </Shell>
       </IonContent>
     </IonPage>

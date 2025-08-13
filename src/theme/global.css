@@ -68,22 +68,77 @@
 }
 
 /* =======================
-   Floating Panel (Shell)
+   Global chrome / Tab bar
+   ======================= */
+ion-app,
+.ion-page,
+ion-content {
+  background: transparent !important;
+}
+ion-content {
+  --background: transparent;
+}
+
+ion-header ion-toolbar {
+  --background: transparent;
+  --color: #e6eef8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px) saturate(1.1);
+}
+ion-tab-bar {
+  --background: rgba(15, 22, 36, 0.72);
+  backdrop-filter: blur(10px) saturate(1.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  --color: #8fa1b3;
+  --color-selected: #7dd3fc;
+}
+
+/* =======================
+   Typography & spacing tokens
+   ======================= */
+:root {
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+
+  --panel-top-space: 180px;
+  --panel-bottom-space: 80px;
+}
+
+/* =======================
+   Floating Panel (Shell) as page
    ======================= */
 .app-panel {
   position: relative;
   z-index: 2;
   max-width: 980px;
-  margin: 18px auto 20px; /* sits clearly below the Hero */
-  padding: 0;
+  margin: var(--panel-top-space) auto var(--panel-bottom-space);
   border-radius: 16px;
   background: rgba(17, 25, 40, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(14px) saturate(1.2);
   box-shadow: 0 20px 60px rgba(2, 8, 23, 0.55);
-  overflow: clip;
+
+  /* page scrolling happens inside the panel */
+  height: calc(100vh - var(--panel-top-space) - var(--panel-bottom-space));
+  max-height: calc(100vh - var(--panel-top-space) - var(--panel-bottom-space));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
+@supports (-webkit-touch-callout: none) {
+  .app-panel {
+    height: calc(100dvh - var(--panel-top-space) - var(--panel-bottom-space));
+    max-height: calc(
+      100dvh - var(--panel-top-space) - var(--panel-bottom-space)
+    );
+  }
+}
+
 .panel-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -92,8 +147,8 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.04),
-    rgba(255, 255, 255, 0)
+    rgba(11, 16, 26, 0.85),
+    rgba(11, 16, 26, 0.55)
   );
 }
 .panel-header h2 {
@@ -107,11 +162,16 @@
   gap: 10px;
   align-items: center;
 }
+
 .panel-body {
-  padding-bottom: 8px;
+  flex: 1 1 auto;
+  min-height: 0; /* critical for flex overflow */
+  overflow: auto; /* this is the scroller */
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 12px;
 }
 
-/* Lists look card-like inside the panel */
+/* Lists inside panels */
 ion-list[inset] {
   margin: 16px;
   border-radius: 12px;
@@ -123,9 +183,11 @@ ion-item {
   --inner-border-width: 0 0 1px 0;
   --border-color: rgba(255, 255, 255, 0.07);
   --background: transparent;
+  --padding-start: 14px;
+  --inner-padding-end: 14px;
 }
 
-/* Buttons â€“ glassy */
+/* Buttons – glassy */
 .app-panel ion-button {
   --border-radius: 12px;
   --padding-top: 12px;
@@ -144,7 +206,7 @@ ion-item {
   --background: rgba(255, 255, 255, 0.06);
 }
 
-/* FAB: slim glacier ring */
+/* FAB */
 .app-panel ion-fab-button {
   --background: rgba(17, 25, 40, 0.9);
   --color: #e8f0ff;
@@ -154,51 +216,10 @@ ion-item {
   --border-radius: 12px;
 }
 
-/* =======================
-   Global chrome/Tab bar
-   ======================= */
-/* make waves visible everywhere */
-ion-app,
-.ion-page,
-ion-content {
-  background: transparent !important;
-}
-ion-content {
-  --background: transparent;
-}
-
-/* toolbar (if any left) stays transparent */
-ion-header ion-toolbar {
-  --background: transparent;
-  --color: #e6eef8;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(8px) saturate(1.1);
-}
-
-/* Tab bar is glassy (outside panel) */
-ion-tab-bar {
-  --background: rgba(15, 22, 36, 0.72);
-  backdrop-filter: blur(10px) saturate(1.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  --color: #8fa1b3;
-  --color-selected: #7dd3fc;
-}
-
-/* ---------- Readability: sizes, weights, spacing ---------- */
-:root {
-  --text-xs: 12px;
-  --text-sm: 13px;
-  --text-md: 15px;
-  --text-lg: 18px;
-  --text-xl: 22px;
-}
-
-/* Bigger tap target for rows */
+/* Money / row styles */
 .app-panel .row-lg {
   --min-height: 72px;
 }
-
-/* Common money styling */
 .app-panel .money {
   font-size: var(--text-md);
   font-weight: 700;
@@ -206,8 +227,6 @@ ion-tab-bar {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.2px;
 }
-
-/* Total row */
 .app-panel .total-row ion-label {
   font-size: var(--text-md);
   font-weight: 700;
@@ -217,8 +236,6 @@ ion-tab-bar {
   font-weight: 800;
   color: #eaf2ff;
 }
-
-/* Transaction rows */
 .app-panel .tx-row h2 {
   margin: 0 0 2px;
   font-size: var(--text-lg);
@@ -230,175 +247,65 @@ ion-tab-bar {
   font-size: var(--text-sm);
   color: #9fb0c3;
 }
-.app-panel .tx-row ion-note {
-  composes: money;
-} /* (safe if ignored) */
 .app-panel .tx-row ion-chip {
   transform: translateY(-2px);
 }
-
-/* Accounts / Categories list rows */
 .app-panel .list-row ion-label {
   font-size: var(--text-md);
   font-weight: 600;
 }
 .app-panel .list-row ion-note {
-  composes: money;
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: #d7e6ff;
 }
 
-/* Slightly denser item padding so larger type still fits nicely */
-.app-panel ion-item {
-  --padding-start: 14px;
-  --inner-padding-end: 14px;
-}
-
-/* Space above the panel so it sits below the waves/hero */
-:root {
-  --panel-top-space: 180px; /* raise/lower until it looks perfect */
-  --panel-bottom-space: 80px; /* room above the tab bar */
-}
-
-/* Floating panel is a self-contained scroll container */
-.app-panel {
-  position: relative;
-  z-index: 2;
-  max-width: 980px;
-
-  /* top / horiz / bottom margins in one place */
-  margin: var(--panel-top-space) auto var(--panel-bottom-space);
-
-  border-radius: 16px;
-  background: rgba(17, 25, 40, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(14px) saturate(1.2);
-  box-shadow: 0 20px 60px rgba(2, 8, 23, 0.55);
-
-  /* make the panel itself scroll, not the page */
-  height: calc(100vh - var(--panel-top-space) - var(--panel-bottom-space));
-  max-height: calc(100vh - var(--panel-top-space) - var(--panel-bottom-space));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.panel-header {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.04),
-    rgba(255, 255, 255, 0)
-  );
-}
-
-.panel-body {
-  flex: 1 1 auto;
-  min-height: 0; /* critical for flex overflow */
-  overflow: auto; /* this is now the scroller */
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 12px;
-}
-
-/* iOS viewport fix */
-@supports (-webkit-touch-callout: none) {
-  .app-panel {
-    height: calc(100dvh - var(--panel-top-space) - var(--panel-bottom-space));
-    max-height: calc(
-      100dvh - var(--panel-top-space) - var(--panel-bottom-space)
-    );
-  }
-}
-
-/* Small screens: tuck a bit closer to the hero & tab bar */
+/* Small screens: tuck closer to hero & tab bar */
 @media (max-width: 720px) {
   :root {
     --panel-top-space: 240px;
     --panel-bottom-space: 56px;
   }
 }
-/* â€”â€”â€”â€”â€” Dialog mode â€”â€”â€”â€”â€” */
-.overlay-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  background: rgba(3, 10, 20, 0.55);
-  backdrop-filter: blur(6px) saturate(1.05);
+
+/* =======================
+   Dialog mode (IonModal with class="dialog-modal")
+   ======================= */
+.dialog-modal::part(content) {
+  --background: transparent;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px; /* breathing room around the panel */
 }
 
-/* Centered, narrower panel */
-.app-panel.dialog {
-  position: fixed;
-  z-index: 4;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+/* Centered, narrower, scrollable panel INSIDE the modal */
+.dialog-modal .app-panel.dialog {
+  position: relative;
+  inset: auto;
+  transform: none;
   margin: 0;
-  width: min(720px, 92vw);
-  max-height: min(84vh, 840px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  width: clamp(360px, 84vw, 620px);
+  height: auto;
+  max-height: 90vh;
+  overflow: visible;
   border-radius: 18px;
   background: rgba(16, 23, 36, 0.9);
   border: 1px solid rgba(125, 211, 252, 0.18);
   box-shadow: 0 22px 70px rgba(2, 8, 23, 0.6),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
-
-.app-panel.dialog .panel-body {
+.dialog-modal .app-panel.dialog .panel-body {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto; /* scroll only inside the dialog if needed */
+  overflow: visible;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 14px;
 }
 
-/* Dialog action buttons */
-.app-panel.dialog .panel-actions ion-button {
-  --padding-top: 10px;
-  --padding-bottom: 10px;
-}
-.app-panel.dialog .footer-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  padding: 12px 16px 16px;
-}
-
-/* Dark theme for the calendar when it opens */
-ion-modal ion-datetime,
-.app-panel.dialog ion-datetime {
-  --background: #0f1724;
-  --title-color: #e6eef8;
-  --color: #e6eef8;
-  --ion-color-primary: #7dd3fc;
-  --wheel-highlight-background: rgba(255, 255, 255, 0.06);
-  --wheel-fade-background-rgb: 15, 23, 36;
-}
-
-/* Compact form sizing inside dialog */
-.app-panel.dialog ion-list[inset] {
-  margin: 12px;
-}
-.app-panel.dialog ion-item {
-  --inner-padding-end: 12px;
-  --padding-start: 12px;
-}
-/* Make the Shell header hide the hero text behind it a bit more */
-.panel-header {
-  background: linear-gradient(
-    180deg,
-    rgba(11, 16, 26, 0.85),
-    rgba(11, 16, 26, 0.55)
-  );
-}
-
-/* Smaller, tidy action bar in forms */
+/* Dialog form action bar */
 .form-actions {
   display: flex;
   gap: 10px;
@@ -411,9 +318,23 @@ ion-modal ion-datetime,
     rgba(11, 16, 26, 0)
   );
 }
+.app-panel.dialog .panel-actions ion-button {
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+}
 
-/* Dark-theme the calendar modal so dates are readable */
-/* Make the datetime *button* look like a subtle outline chip */
+/* Compact form in dialogs */
+.app-panel.dialog ion-list[inset] {
+  margin: 12px;
+}
+.app-panel.dialog ion-item {
+  --inner-padding-end: 12px;
+  --padding-start: 12px;
+}
+
+/* =======================
+   Datetime styling (dark)
+   ======================= */
 .dt-trigger::part(native) {
   background: rgba(255, 255, 255, 0.04);
   color: #e6eef8;
@@ -426,11 +347,10 @@ ion-modal ion-datetime,
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Dark date-picker to match the app */
 .dt-pop ion-datetime {
-  --background: #0f172a; /* panel-dark */
-  --ion-text-color: #e6eef8; /* readable text */
-  --ion-color-step-600: #142132; /* grid borders / lines */
+  --background: #0f172a;
+  --ion-text-color: #e6eef8;
+  --ion-color-step-600: #142132;
   --ion-color-step-400: #1d2f45;
   --wheel-highlight-background: rgba(125, 211, 252, 0.1);
   --wheel-fade-background: transparent;
@@ -438,8 +358,6 @@ ion-modal ion-datetime,
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(2, 8, 23, 0.55);
 }
-
-/* Make the generated DatetimeButton readable on dark */
 ion-datetime-button::part(native) {
   --background: rgba(255, 255, 255, 0.04);
   --color: #e6eef8;
@@ -449,7 +367,37 @@ ion-datetime-button::part(native) {
   padding: 6px 10px;
 }
 
-/* Keep panel spacing tight so Save isnâ€™t far below Notes */
-.panel-body {
-  padding-bottom: 8px;
+.app-panel.dialog .form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  backdrop-filter: blur(6px) saturate(1.05);
+}
+
+/* Dark dropdown for IonSelect (popover interface) */
+ion-popover.select-pop::part(content) {
+  background: rgba(16, 23, 36, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(2, 8, 23, 0.6);
+  color: #e6eef8;
+  min-width: 260px;
+}
+
+ion-popover.select-pop ion-list {
+  background: transparent;
+}
+
+ion-popover.select-pop ion-item {
+  --background: transparent;
+  --color: #e6eef8; /* readable text */
+  --inner-border-width: 0 0 1px 0;
+  --border-color: rgba(255, 255, 255, 0.06);
+}
+
+ion-popover.select-pop .sc-ion-alert-md, /* guard if alert fallback ever happens */
+ion-alert.select-pop {
+  --background: #0f172a;
+  --ion-text-color: #e6eef8;
+  --button-color: #7dd3fc;
 }

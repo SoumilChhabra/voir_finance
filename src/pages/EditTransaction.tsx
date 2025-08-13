@@ -20,17 +20,18 @@ import { useEffect, useState } from "react";
 import { useStore } from "../data/store";
 import Shell from "../components/Shell";
 
-export default function EditTransaction() {
-  const { id } = useParams<{ id: string }>();
+type EditTxProps = { id?: string; onClose?: () => void; asPage?: boolean };
+
+export default function EditTransaction(props: EditTxProps) {
+  const { id: routeId } = useParams<{ id: string }>();
+  const id = props?.id ?? routeId;
+
   const history = useHistory();
   const { accounts, categories, transactions, updateTransaction } = useStore();
 
   const tx = transactions.find((t) => t.id === id);
 
-  useEffect(() => {
-    // If needed, fetch-by-id here when tx is undefined after refresh.
-  }, [tx]);
-
+  // Local state (seed from tx if present)
   const [amount, setAmount] = useState(
     tx ? (tx.amountCents / 100).toFixed(2) : ""
   );
@@ -46,6 +47,17 @@ export default function EditTransaction() {
   const [merchant, setMerchant] = useState(tx?.merchant ?? "");
   const [notes, setNotes] = useState(tx?.notes ?? "");
 
+  // If tx appears later, sync the form once
+  useEffect(() => {
+    if (!tx) return;
+    setAmount((tx.amountCents / 100).toFixed(2));
+    setAccountId(tx.accountId);
+    setCategoryId(tx.categoryId);
+    setDate(tx.date);
+    setMerchant(tx.merchant ?? "");
+    setNotes(tx.notes ?? "");
+  }, [tx]);
+
   const hasBasics = accounts.length > 0 && categories.length > 0;
   const canSave =
     hasBasics &&
@@ -55,10 +67,15 @@ export default function EditTransaction() {
     accountId &&
     categoryId;
 
+  const handleClose = () => {
+    if (props?.onClose) props.onClose();
+    else history.goBack();
+  };
+
   const onSave = async () => {
     if (!canSave) return;
     await updateTransaction({
-      id,
+      id: id as string,
       accountId,
       categoryId,
       amountDollars: amount,
@@ -66,127 +83,139 @@ export default function EditTransaction() {
       merchant,
       notes,
     });
-    history.goBack();
+    handleClose();
   };
 
-  return (
-    <IonPage>
-      <IonContent fullscreen scrollY={false}>
-        <Shell
-          title="Edit Transaction"
-          actions={
-            <IonButton fill="outline" onClick={() => history.goBack()}>
-              <IonIcon icon={close} slot="start" /> Close
-            </IonButton>
-          }
-        >
-          {!hasBasics ? (
-            <div style={{ padding: 16 }}>
-              <p>You need at least one account and one category first.</p>
-            </div>
-          ) : !tx ? (
-            <div style={{ padding: 16 }}>
-              <p>Transaction not found in the current range.</p>
-              <IonButton fill="outline" onClick={() => history.goBack()}>
-                Back
-              </IonButton>
-            </div>
-          ) : (
-            <>
-              <IonList inset>
-                <IonItem>
-                  <IonLabel position="stacked">Amount (CAD)</IonLabel>
-                  <IonInput
-                    type="number"
-                    inputmode="decimal"
-                    placeholder="0.00"
-                    value={amount}
-                    onIonInput={(e) => setAmount(String(e.detail.value ?? ""))}
-                  />
-                </IonItem>
+  // Shared UI for both page and modal
+  const Body = (
+    <Shell
+      title="Edit Transaction"
+      className="dialog"
+      actions={
+        <IonButton fill="outline" onClick={handleClose}>
+          <IonIcon icon={close} slot="start" /> Close
+        </IonButton>
+      }
+    >
+      {!hasBasics ? (
+        <div style={{ padding: 16 }}>
+          <p>You need at least one account and one category first.</p>
+        </div>
+      ) : !tx ? (
+        <div style={{ padding: 16 }}>
+          <p>Transaction not found in the current range.</p>
+          <IonButton fill="outline" onClick={handleClose}>
+            Back
+          </IonButton>
+        </div>
+      ) : (
+        <>
+          <IonList inset>
+            <IonItem>
+              <IonLabel position="stacked">Amount (CAD)</IonLabel>
+              <IonInput
+                type="number"
+                inputmode="decimal"
+                placeholder="0.00"
+                value={amount}
+                onIonInput={(e) => setAmount(String(e.detail.value ?? ""))}
+              />
+            </IonItem>
 
-                <IonItem>
-                  <IonLabel>Account</IonLabel>
-                  <IonSelect
-                    value={accountId}
-                    onIonChange={(e) => setAccountId(e.detail.value)}
-                  >
-                    {accounts.map((a) => (
-                      <IonSelectOption key={a.id} value={a.id}>
-                        {a.name}
-                        {a.last4 ? ` •••• ${a.last4}` : ""}
-                      </IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </IonItem>
+            <IonItem>
+              <IonLabel>Account</IonLabel>
+              <IonSelect
+                interface="popover"
+                interfaceOptions={{ cssClass: "select-pop" }} // for styling
+                value={accountId}
+                onIonChange={(e) => setAccountId(e.detail.value)}
+              >
+                {accounts.map((a) => (
+                  <IonSelectOption key={a.id} value={a.id}>
+                    {a.name}
+                    {a.last4 ? ` •••• ${a.last4}` : ""}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonItem>
 
-                <IonItem>
-                  <IonLabel>Category</IonLabel>
-                  <IonSelect
-                    value={categoryId}
-                    onIonChange={(e) => setCategoryId(e.detail.value)}
-                  >
-                    {categories.map((c) => (
-                      <IonSelectOption key={c.id} value={c.id}>
-                        {c.name}
-                      </IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </IonItem>
+            <IonItem>
+              <IonLabel>Category</IonLabel>
+              <IonSelect
+                interface="popover"
+                interfaceOptions={{ cssClass: "select-pop" }}
+                value={categoryId}
+                onIonChange={(e) => setCategoryId(e.detail.value)}
+              >
+                {categories.map((c) => (
+                  <IonSelectOption key={c.id} value={c.id}>
+                    {c.name}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonItem>
 
-                {/* Date row — button is now readable on dark */}
-                <IonItem>
-                  <IonLabel>Date</IonLabel>
-                  <div slot="end">
-                    <IonDatetimeButton
-                      datetime="edit-date"
-                      className="dt-trigger"
-                    />
-                  </div>
-                </IonItem>
-
-                <IonModal keepContentsMounted className="dt-pop">
-                  <IonDatetime
-                    id="edit-date"
-                    presentation="date"
-                    value={date}
-                    onIonChange={(e) =>
-                      setDate(String(e.detail.value).slice(0, 10))
-                    }
-                  />
-                </IonModal>
-
-                <IonItem>
-                  <IonLabel position="stacked">Merchant</IonLabel>
-                  <IonInput
-                    value={merchant}
-                    onIonInput={(e) =>
-                      setMerchant(String(e.detail.value ?? ""))
-                    }
-                  />
-                </IonItem>
-
-                <IonItem>
-                  <IonLabel position="stacked">Notes</IonLabel>
-                  <IonInput
-                    value={notes}
-                    onIonInput={(e) => setNotes(String(e.detail.value ?? ""))}
-                  />
-                </IonItem>
-              </IonList>
-
-              <div className="form-actions">
-                <IonButton fill="outline" onClick={() => history.goBack()}>
-                  <IonIcon icon={close} slot="start" /> Cancel
-                </IonButton>
-                <IonButton onClick={onSave} disabled={!canSave}>
-                  <IonIcon icon={save} slot="start" /> Save
-                </IonButton>
+            {/* Date */}
+            <IonItem>
+              <IonLabel>Date</IonLabel>
+              <div slot="end">
+                <IonDatetimeButton
+                  datetime="edit-date"
+                  className="dt-trigger"
+                />
               </div>
-            </>
-          )}
-        </Shell>
-      </IonContent>
-    </IonPage>
+            </IonItem>
+
+            <IonModal keepContentsMounted className="dt-pop">
+              <IonDatetime
+                id="edit-date"
+                presentation="date"
+                value={date}
+                onIonChange={(e) =>
+                  setDate(String(e.detail.value).slice(0, 10))
+                }
+              />
+            </IonModal>
+
+            <IonItem>
+              <IonLabel position="stacked">Merchant</IonLabel>
+              <IonInput
+                value={merchant}
+                onIonInput={(e) => setMerchant(String(e.detail.value ?? ""))}
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="stacked">Notes</IonLabel>
+              <IonInput
+                value={notes}
+                onIonInput={(e) => setNotes(String(e.detail.value ?? ""))}
+              />
+            </IonItem>
+          </IonList>
+
+          <div className="form-actions">
+            <IonButton fill="outline" onClick={handleClose}>
+              <IonIcon icon={close} slot="start" /> Cancel
+            </IonButton>
+            <IonButton onClick={onSave} disabled={!canSave}>
+              <IonIcon icon={save} slot="start" /> Save
+            </IonButton>
+          </div>
+        </>
+      )}
+    </Shell>
   );
+
+  // Page vs modal wrapper
+  if (props.asPage) {
+    return (
+      <IonPage>
+        <IonContent fullscreen scrollY={false}>
+          {Body}
+        </IonContent>
+      </IonPage>
+    );
+  }
+  return Body;
 }

@@ -78,7 +78,17 @@ export default function App() {
                 <Route path="/tabs/all" component={All} exact />
                 <Route path="/tabs/accounts" component={Accounts} exact />
                 <Route path="/tabs/categories" component={Categories} exact />
-                <Route path="/add" component={AddTransaction} exact />
+                <Route
+                  path="/add"
+                  render={() => <AddTransaction asPage />}
+                  exact
+                />
+                <Route
+                  path="/edit/:id"
+                  render={() => <EditTransaction asPage />}
+                  exact
+                />
+
                 <Route exact path="/">
                   <Redirect to="/tabs/all" />
                 </Route>
@@ -86,7 +96,6 @@ export default function App() {
                 <Route path="/add-category" component={AddCategory} exact />
                 <Route path="/account/:id" component={AccountDetail} exact />
                 <Route path="/category/:id" component={CategoryDetail} exact />
-                <Route path="/edit/:id" component={EditTransaction} exact />
               </IonRouterOutlet>
 
               <IonTabBar slot="bottom">
