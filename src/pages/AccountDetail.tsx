@@ -1,3 +1,4 @@
+// src/pages/AccountDetail.tsx
 import {
   IonPage,
   IonContent,
@@ -5,8 +6,11 @@ import {
   IonItem,
   IonLabel,
   IonNote,
+  IonButton,
+  IonIcon,
 } from "@ionic/react";
-import { useParams } from "react-router";
+import { useParams, useHistory } from "react-router";
+import { chevronBack } from "ionicons/icons";
 import Shell from "../components/Shell";
 import DateRangeButton from "../components/DateRangeButton";
 import { useStore } from "../data/store";
@@ -16,6 +20,7 @@ import { formatDateLocal } from "../utils/date";
 
 export default function AccountDetail() {
   const { id } = useParams<{ id: string }>();
+  const history = useHistory();
   const { transactions, accountById } = useStore();
   const account = accountById[id];
 
@@ -25,7 +30,18 @@ export default function AccountDetail() {
   return (
     <IonPage>
       <IonContent fullscreen scrollY={false}>
-        <Shell title={account?.name ?? "Account"} actions={<DateRangeButton />}>
+        <Shell
+          title={account?.name ?? "Account"}
+          actions={
+            <>
+              <IonButton fill="outline" onClick={() => history.goBack()}>
+                <IonIcon icon={chevronBack} slot="start" />
+                Back
+              </IonButton>
+              <DateRangeButton />
+            </>
+          }
+        >
           <IonItem lines="full" className="total-row row-lg">
             <IonLabel>Total</IonLabel>
             <IonNote slot="end" className="money">

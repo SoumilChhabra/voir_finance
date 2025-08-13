@@ -7,8 +7,11 @@ import {
   IonLabel,
   IonNote,
   IonChip,
+  IonButton,
+  IonIcon,
 } from "@ionic/react";
-import { useParams } from "react-router";
+import { useParams, useHistory } from "react-router";
+import { chevronBack } from "ionicons/icons";
 import Shell from "../components/Shell";
 import DateRangeButton from "../components/DateRangeButton";
 import { useStore } from "../data/store";
@@ -17,6 +20,7 @@ import { formatDateLocal } from "../utils/date";
 
 export default function CategoryDetail() {
   const { id } = useParams<{ id: string }>();
+  const history = useHistory();
   const { transactions, accountById, categoryById } = useStore();
 
   const category = categoryById[id];
@@ -25,7 +29,6 @@ export default function CategoryDetail() {
     .sort((a, b) => (a.date > b.date ? -1 : 1));
 
   const total = txns.reduce((s, t) => s + t.amountCents, 0);
-  // Choose a currency for the total: first txn’s currency or fallback
   const totalCurrency = txns[0]?.currency ?? "CAD";
 
   return (
@@ -33,7 +36,15 @@ export default function CategoryDetail() {
       <IonContent fullscreen scrollY={false}>
         <Shell
           title={category?.name ?? "Category"}
-          actions={<DateRangeButton />}
+          actions={
+            <>
+              <IonButton fill="outline" onClick={() => history.goBack()}>
+                <IonIcon icon={chevronBack} slot="start" />
+                Back
+              </IonButton>
+              <DateRangeButton />
+            </>
+          }
         >
           <IonItem lines="full" className="total-row row-lg">
             <IonLabel>Total</IonLabel>
@@ -55,7 +66,6 @@ export default function CategoryDetail() {
                     </p>
                   </IonLabel>
 
-                  {/* Category pill (shows current category color/name) */}
                   {category && (
                     <IonChip
                       slot="end"
@@ -65,7 +75,11 @@ export default function CategoryDetail() {
                     </IonChip>
                   )}
 
-                  <IonNote slot="end" style={{ marginLeft: 8 }}>
+                  <IonNote
+                    slot="end"
+                    className="money"
+                    style={{ marginLeft: 8 }}
+                  >
                     {formatCurrency(t.amountCents, t.currency)}
                   </IonNote>
                 </IonItem>
