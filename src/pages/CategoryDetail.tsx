@@ -9,6 +9,7 @@ import {
   IonChip,
   IonButton,
   IonIcon,
+  IonSearchbar,
 } from "@ionic/react";
 import { useParams, useHistory } from "react-router";
 import { chevronBack } from "ionicons/icons";
@@ -17,6 +18,8 @@ import DateRangeButton from "../components/DateRangeButton";
 import { useStore } from "../data/store";
 import { formatCurrency } from "../utils/money";
 import { formatDateLocal } from "../utils/date";
+import { useState } from "react";
+import { txMatchesQuery } from "../utils/search";
 
 export default function CategoryDetail() {
   const { id } = useParams<{ id: string }>();
@@ -28,8 +31,15 @@ export default function CategoryDetail() {
     .filter((t) => t.categoryId === id)
     .sort((a, b) => (a.date > b.date ? -1 : 1));
 
-  const total = txns.reduce((s, t) => s + t.amountCents, 0);
-  const totalCurrency = txns[0]?.currency ?? "CAD";
+  // search query
+  const [query, setQuery] = useState("");
+
+  const filtered = txns.filter((t) =>
+    txMatchesQuery(t, query, accountById, categoryById)
+  );
+
+  const total = filtered.reduce((s, t) => s + t.amountCents, 0);
+  const totalCurrency = filtered[0]?.currency ?? "CAD";
 
   return (
     <IonPage>
@@ -42,6 +52,15 @@ export default function CategoryDetail() {
                 <IonIcon icon={chevronBack} slot="start" />
                 Back
               </IonButton>
+              <IonSearchbar
+                className="tx-search"
+                debounce={200}
+                placeholder="Search…"
+                value={query}
+                onIonInput={(e) => setQuery(e.detail.value ?? "")}
+                showCancelButton="focus"
+                showClearButton="never"
+              />
               <DateRangeButton />
             </>
           }
@@ -54,7 +73,7 @@ export default function CategoryDetail() {
           </IonItem>
 
           <IonList inset>
-            {txns.map((t) => {
+            {filtered.map((t) => {
               const account = accountById[t.accountId];
               return (
                 <IonItem key={t.id} className="tx-row row-lg">

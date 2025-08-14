@@ -16,6 +16,7 @@ import {
   useIonAlert,
   useIonToast,
   IonModal,
+  IonSearchbar,
 } from "@ionic/react";
 import { add, downloadOutline } from "ionicons/icons";
 import DateRangeButton from "../components/DateRangeButton";
@@ -27,6 +28,7 @@ import Shell from "../components/Shell";
 import { useState } from "react";
 import AddTransaction from "./AddTransaction";
 import EditTransaction from "./EditTransaction";
+import { txMatchesQuery } from "../utils/search";
 
 export default function All() {
   const {
@@ -36,7 +38,15 @@ export default function All() {
     dateRange,
     deleteTransaction,
   } = useStore();
-  const txns = [...transactions];
+
+  // search query
+  const [query, setQuery] = useState("");
+
+  // apply search filter
+  const txns = transactions.filter((t) =>
+    txMatchesQuery(t, query, accountById, categoryById)
+  );
+
   const totalCents = txns.reduce((s, t) => s + t.amountCents, 0);
   const [presentAlert] = useIonAlert();
   const [toast] = useIonToast();
@@ -96,6 +106,16 @@ export default function All() {
           title="All"
           actions={
             <>
+              <IonSearchbar
+                className="tx-search"
+                debounce={200}
+                placeholder="Search…"
+                value={query}
+                onIonInput={(e) => setQuery(e.detail.value ?? "")}
+                showCancelButton="focus"
+                showClearButton="never"
+              />
+
               <DateRangeButton />
               <IonButton fill="outline" onClick={exportCurrentRange}>
                 <IonIcon slot="start" icon={downloadOutline} />
@@ -113,7 +133,7 @@ export default function All() {
 
           {txns.length === 0 && (
             <div style={{ padding: 24, textAlign: "center", opacity: 0.8 }}>
-              <p>No transactions in this date range.</p>
+              <p>No transactions match this search (or date range).</p>
               <IonButton size="default" onClick={() => setShowAdd(true)}>
                 Add a transaction
               </IonButton>

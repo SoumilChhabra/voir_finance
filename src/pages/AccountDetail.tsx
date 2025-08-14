@@ -8,6 +8,7 @@ import {
   IonNote,
   IonButton,
   IonIcon,
+  IonSearchbar,
 } from "@ionic/react";
 import { useParams, useHistory } from "react-router";
 import { chevronBack } from "ionicons/icons";
@@ -17,15 +18,25 @@ import { useStore } from "../data/store";
 import { formatCurrency } from "../utils/money";
 import { sortNewest } from "../utils/tx";
 import { formatDateLocal } from "../utils/date";
+import { useState } from "react";
+import { txMatchesQuery } from "../utils/search";
 
 export default function AccountDetail() {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
-  const { transactions, accountById } = useStore();
+  const { transactions, accountById, categoryById } = useStore();
   const account = accountById[id];
 
   const txns = transactions.filter((t) => t.accountId === id).sort(sortNewest);
-  const total = txns.reduce((s, t) => s + t.amountCents, 0);
+
+  // search query
+  const [query, setQuery] = useState("");
+
+  const filtered = txns.filter((t) =>
+    txMatchesQuery(t, query, accountById, categoryById)
+  );
+
+  const total = filtered.reduce((s, t) => s + t.amountCents, 0);
 
   return (
     <IonPage>
@@ -38,6 +49,15 @@ export default function AccountDetail() {
                 <IonIcon icon={chevronBack} slot="start" />
                 Back
               </IonButton>
+              <IonSearchbar
+                className="tx-search"
+                debounce={200}
+                placeholder="Search…"
+                value={query}
+                onIonInput={(e) => setQuery(e.detail.value ?? "")}
+                showCancelButton="focus"
+                showClearButton="never"
+              />
               <DateRangeButton />
             </>
           }
@@ -50,7 +70,7 @@ export default function AccountDetail() {
           </IonItem>
 
           <IonList inset>
-            {txns.map((t) => (
+            {filtered.map((t) => (
               <IonItem key={t.id} className="tx-row row-lg">
                 <IonLabel>
                   <h2>{t.merchant ?? "Transaction"}</h2>

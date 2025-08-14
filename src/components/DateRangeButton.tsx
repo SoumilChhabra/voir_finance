@@ -3,17 +3,14 @@ import {
   IonButtons,
   IonIcon,
   IonModal,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonList,
   IonItem,
   IonLabel,
   IonDatetime,
-  IonFooter,
+  IonDatetimeButton,
 } from "@ionic/react";
-import { calendar } from "ionicons/icons";
+import { calendar, close } from "ionicons/icons";
 import { useState } from "react";
 import { useStore } from "../data/store";
 import {
@@ -23,6 +20,7 @@ import {
   todayISO,
   addDaysISO,
 } from "../utils/date";
+import Shell from "../components/Shell";
 
 export default function DateRangeButton() {
   const { dateRange, setDateRange } = useStore();
@@ -59,56 +57,85 @@ export default function DateRangeButton() {
         </IonButton>
       </IonButtons>
 
-      <IonModal isOpen={open} onDidDismiss={() => setOpen(false)}>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Select date range</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent>
-          <IonList inset>
-            <IonItem button onClick={() => applyPreset("today")}>
-              <IonLabel>Today</IonLabel>
-            </IonItem>
-            <IonItem button onClick={() => applyPreset("7d")}>
-              <IonLabel>Last 7 days</IonLabel>
-            </IonItem>
-            <IonItem button onClick={() => applyPreset("month")}>
-              <IonLabel>This month</IonLabel>
-            </IonItem>
-          </IonList>
+      {/* Centered glass dialog, like Add/Edit */}
+      <IonModal
+        isOpen={open}
+        onDidDismiss={() => setOpen(false)}
+        keepContentsMounted
+        className="dialog-modal date-modal"
+      >
+        <Shell
+          title="Select date range"
+          className="dialog"
+          actions={
+            <IonButton fill="outline" onClick={() => setOpen(false)}>
+              <IonIcon icon={close} slot="start" /> Close
+            </IonButton>
+          }
+        >
+          <div className="panel-body">
+            {/* Presets */}
+            <IonList inset>
+              <IonItem button onClick={() => applyPreset("today")}>
+                <IonLabel>Today</IonLabel>
+              </IonItem>
+              <IonItem button onClick={() => applyPreset("7d")}>
+                <IonLabel>Last 7 days</IonLabel>
+              </IonItem>
+              <IonItem button onClick={() => applyPreset("month")}>
+                <IonLabel>This month</IonLabel>
+              </IonItem>
+            </IonList>
 
-          <IonList inset>
-            <IonItem>
-              <IonLabel position="stacked">Start</IonLabel>
+            {/* Start / End as rows with pop-up calendars */}
+            <IonList inset>
+              <IonItem>
+                <IonLabel>Start</IonLabel>
+                <div slot="end">
+                  <IonDatetimeButton
+                    datetime="dr-start"
+                    className="dt-trigger"
+                  />
+                </div>
+              </IonItem>
+              <IonItem>
+                <IonLabel>End</IonLabel>
+                <div slot="end">
+                  <IonDatetimeButton datetime="dr-end" className="dt-trigger" />
+                </div>
+              </IonItem>
+            </IonList>
+
+            {/* Pop-up calendars (dark themed via .dt-pop in your CSS) */}
+            <IonModal keepContentsMounted className="dt-pop">
               <IonDatetime
+                id="dr-start"
                 presentation="date"
                 value={start}
                 onIonChange={(e) =>
                   setStart(String(e.detail.value).slice(0, 10))
                 }
               />
-            </IonItem>
-            <IonItem>
-              <IonLabel position="stacked">End</IonLabel>
+            </IonModal>
+
+            <IonModal keepContentsMounted className="dt-pop">
               <IonDatetime
+                id="dr-end"
                 presentation="date"
                 value={end}
                 onIonChange={(e) => setEnd(String(e.detail.value).slice(0, 10))}
               />
-            </IonItem>
-          </IonList>
-        </IonContent>
-        <IonFooter>
-          <IonToolbar>
-            <IonButtons slot="end">
-              <IonButton onClick={() => setOpen(false)}>Cancel</IonButton>
-              <IonButton strong onClick={apply}>
-                Apply
-              </IonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonFooter>
+            </IonModal>
+          </div>
+
+          {/* Footer actions */}
+          <div className="form-actions">
+            <IonButton fill="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </IonButton>
+            <IonButton onClick={apply}>Apply</IonButton>
+          </div>
+        </Shell>
       </IonModal>
     </>
   );
