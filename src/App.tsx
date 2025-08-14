@@ -17,6 +17,9 @@ import { StoreProvider } from "./data/store";
 import AuthGate from "./auth/AuthGate";
 import { useEffect } from "react";
 import { useLocation } from "react-router";
+import { App as CapApp } from "@capacitor/app";
+import { supabase } from "./lib/supabase";
+import AuthCallback from "./auth/AuthCallback";
 
 import All from "./pages/All";
 import Accounts from "./pages/Accounts";
@@ -65,6 +68,63 @@ export default function App() {
     document.body.classList.add("dark");
   }, []);
 
+  useEffect(() => {
+    let sub: any;
+
+    (async () => {
+      sub = await CapApp.addListener("appUrlOpen", async ({ url }) => {
+        // Only handle our auth callback
+        const prefix = "com.soumilchhabra.penny://auth/callback";
+        if (!url.startsWith(prefix)) return;
+
+        try {
+          // Parse both hash and query for maximum compatibility
+          const u = new URL(url);
+          const hash = u.hash?.replace(/^#/, "") ?? "";
+          const hashParams = new URLSearchParams(hash);
+          const queryParams = u.search
+            ? new URLSearchParams(u.search)
+            : new URLSearchParams();
+
+          // If Supabase returned an error (e.g., tapped twice / expired)
+          const error = hashParams.get("error") || queryParams.get("error");
+          if (error) {
+            console.error(
+              "Auth error:",
+              error,
+              hashParams.get("error_description") ||
+                queryParams.get("error_description")
+            );
+            return;
+          }
+
+          // Magic-link (email OTP) path: tokens are in the hash
+          const access_token = hashParams.get("access_token");
+          const refresh_token = hashParams.get("refresh_token");
+          if (access_token && refresh_token) {
+            await supabase.auth.setSession({ access_token, refresh_token });
+            // at this point your AuthGate should show the app
+            return;
+          }
+
+          // Fallback: code-exchange path (some providers return ?code=)
+          const code = hashParams.get("code") || queryParams.get("code");
+          const anyAuth: any = supabase.auth;
+          if (code && typeof anyAuth.exchangeCodeForSession === "function") {
+            // redirectTo is optional but nice to be explicit
+            await anyAuth.exchangeCodeForSession({ code, redirectTo: prefix });
+          }
+        } catch (e) {
+          console.error("Auth callback handling failed:", e);
+        }
+      });
+    })();
+
+    return () => {
+      sub?.remove();
+    };
+  }, []);
+
   return (
     <IonApp>
       <Background />
@@ -96,6 +156,7 @@ export default function App() {
                 <Route path="/add-category" component={AddCategory} exact />
                 <Route path="/account/:id" component={AccountDetail} exact />
                 <Route path="/category/:id" component={CategoryDetail} exact />
+                <Route path="/auth/callback" component={AuthCallback} exact />
               </IonRouterOutlet>
 
               <IonTabBar slot="bottom">

@@ -1,5 +1,7 @@
+// src/auth/SignIn.tsx
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import { Capacitor } from "@capacitor/core"; // ← add
 import {
   IonPage,
   IonHeader,
@@ -21,10 +23,18 @@ export default function SignIn() {
 
   const send = async () => {
     setErr(null);
+
+    const isNative = Capacitor.getPlatform() !== "web";
+    const nativeRedirect = "com.soumilchhabra.penny://auth/callback";
+    const webRedirect = window.location.origin + "/auth/callback";
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: window.location.origin },
+      options: {
+        emailRedirectTo: isNative ? nativeRedirect : webRedirect,
+      },
     });
+
     if (error) setErr(error.message);
     else setSent(true);
   };
