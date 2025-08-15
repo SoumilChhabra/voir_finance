@@ -5,16 +5,22 @@
 
 /* === Tunables & Theme Tokens ============================ */
 :root {
-  /* ---- Background "photo band" controls ---- */
-  --bg-band-height: 320px; /* taller/shorter band */
-  --bg-band-max: 1900px; /* max band width on big screens */
-  --bg-band-offset-y: 0px; /* push band up/down */
+  /* ---- Background & band controls ---- */
+  --bg: radial-gradient(
+    120% 120% at 50% -20%,
+    #0b1422 0%,
+    #02060c 60%,
+    #000 100%
+  );
+  --bg-band-height: 320px;
+  --bg-band-max: 1900px;
+  --bg-band-offset-y: 0px;
 
   /* cropping inside the band */
-  --bg-pos-x: 40%; /* 0% left … 50% center … 100% right */
-  --bg-nudge-x: 0px; /* fine horizontal nudge (+right / -left) */
-  --bg-pos-y: 0%; /* lower % shows more top of the image */
-  --bg-zoom: 1; /* 1 = fit, 1.2 = zoom in */
+  --bg-pos-x: 40%;
+  --bg-nudge-x: 0px;
+  --bg-pos-y: 0%;
+  --bg-zoom: 1;
 
   /* hero/panel spacing */
   --panel-top-space: 160px;
@@ -24,9 +30,9 @@
   --brand: #7dd3fc;
   --brand-strong: #38bdf8;
 
-  --surface: rgba(12, 16, 24, 0.86); /* main panel */
-  --surface-2: rgba(10, 14, 22, 0.72); /* toolbars / tab bar */
-  --surface-3: rgba(8, 12, 18, 0.55); /* soft gradients */
+  --surface: rgba(12, 16, 24, 0.86);
+  --surface-2: rgba(10, 14, 22, 0.72);
+  --surface-3: rgba(8, 12, 18, 0.55);
 
   --border: rgba(255, 255, 255, 0.06);
   --text: #e7eef8;
@@ -37,31 +43,19 @@
 
   --hero-gap: 1px;
 
-  /* typography scale */
-
-  --text-xs: 12px;
-  --text-sm: 13px;
-  --text-md: 15px;
-  --text-lg: 18px;
-  --text-xl: 22px;
-
-  /* === Typography tokens (add) === */
-
-  /* Typography families */
+  /* typography */
   --font-display: "Outfit", ui-sans-serif, -apple-system, Inter, Segoe UI,
     Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-ui: "Inter", ui-sans-serif, -apple-system, Segoe UI, Roboto,
     "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 
-  /* Weights + lines */
   --w-reg: 400;
   --w-med: 500;
-  --w-sb: 600; /* ← “sb” (semibold) — we’ll use this a lot */
+  --w-sb: 600;
   --w-b: 700;
   --lh-tight: 1.15;
   --lh-normal: 1.35;
 
-  /* Size ramp (slightly bigger) */
   --text-xs: 12px;
   --text-sm: 14px;
   --text-md: 16px;
@@ -77,17 +71,11 @@
   );
 }
 
-/* Make the page underlays pure black so the band blends nicely */
+/* Base canvas */
 html,
 body,
 ion-app {
   background: #000 !important;
-}
-
-/* Base typography */
-html,
-body,
-ion-app {
   font-family: var(--font-ui);
   color: var(--text);
   line-height: var(--lh-normal);
@@ -101,35 +89,27 @@ ion-app {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: #000; /* neutral black under everything */
+  background: #000;
 }
 
-/* we won’t use a full-screen image here */
+/* band container */
 .bg-photo {
   background: none;
   filter: none;
 }
-
-/* draw the image as a centered "band" */
 .bg-photo::before {
   content: "";
   position: absolute;
   top: var(--bg-band-offset-y);
   left: 50%;
   transform: translateX(-50%);
-
   width: min(var(--bg-band-max), 100vw);
   height: var(--bg-band-height);
-
   background-image: url("/2.png");
   background-repeat: no-repeat;
   background-size: cover;
-  /* crop position + fine nudge */
   background-position: calc(var(--bg-pos-x) + var(--bg-nudge-x)) var(--bg-pos-y);
-
   filter: saturate(1.04) contrast(1.02);
-
-  /* soft fade out at bottom to blend with page */
   -webkit-mask-image: linear-gradient(
     to bottom,
     rgba(0, 0, 0, 1) 70%,
@@ -142,7 +122,7 @@ ion-app {
   );
 }
 
-/* tint/noise overlays limited to band region */
+/* band overlays */
 .bg-overlay,
 .bg-noise {
   position: absolute;
@@ -152,7 +132,6 @@ ion-app {
   height: var(--bg-band-height);
   pointer-events: none;
 }
-
 .bg-overlay {
   background: radial-gradient(
       60% 50% at 20% -10%,
@@ -167,20 +146,15 @@ ion-app {
     linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.42));
   mix-blend-mode: screen;
 }
-
-/* subtle film grain on the band */
 .bg-noise {
   opacity: 0.08;
   mix-blend-mode: soft-light;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' opacity='0.5' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
-
-/* hide the old wave svg if present */
 .bg-waves {
   display: none !important;
 }
 
-/* iOS fixed-attachment quirks avoider (not using attachment anyway) */
 @supports (-webkit-touch-callout: none) {
   .bg-photo {
     background-attachment: scroll;
@@ -201,7 +175,7 @@ ion-app {
   margin: 0;
   font-family: var(--font-display);
   font-size: 36px;
-  font-weight: var(--w-med); /* was too bold; 500 feels refined */
+  font-weight: var(--w-med);
   letter-spacing: 0.2px;
   background: var(--title-gradient);
   -webkit-background-clip: text;
@@ -230,14 +204,12 @@ ion-content {
 ion-content {
   --background: transparent;
 }
-
 ion-header ion-toolbar {
   --background: transparent;
   --color: var(--text);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(8px) saturate(1.05);
 }
-
 ion-tab-bar {
   --background: var(--surface-2);
   --color: #a6b3c3;
@@ -253,24 +225,18 @@ ion-tab-bar {
   position: relative;
   z-index: 2;
   max-width: 980px;
-
   margin: var(--panel-top-space) auto var(--panel-bottom-space);
-
   border-radius: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   backdrop-filter: blur(14px) saturate(1.15);
   box-shadow: 0 20px 60px rgba(2, 8, 23, 0.55);
-
-  /* make the panel itself scroll, not the page */
   height: calc(100vh - var(--panel-top-space) - var(--panel-bottom-space));
   max-height: calc(100vh - var(--panel-top-space) - var(--panel-bottom-space));
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-
-/* iOS viewport fix */
 @supports (-webkit-touch-callout: none) {
   .app-panel {
     height: calc(100dvh - var(--panel-top-space) - var(--panel-bottom-space));
@@ -279,7 +245,6 @@ ion-tab-bar {
     );
   }
 }
-
 .panel-header {
   flex: 0 0 auto;
   display: flex;
@@ -298,26 +263,24 @@ ion-tab-bar {
   margin: 0;
   font-family: var(--font-ui);
   font-size: var(--text-lg);
-  font-weight: var(--w-sb); /* ← was --w-sub */
+  font-weight: var(--w-sb);
   letter-spacing: 0.2px;
   color: var(--text);
 }
-
 .panel-actions {
   display: flex;
   gap: 10px;
   align-items: center;
 }
-
 .panel-body {
   flex: 1 1 auto;
-  min-height: 0; /* critical for flex overflow */
-  overflow: auto; /* this is the scroller */
+  min-height: 0;
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 12px;
 }
 
-/* Lists look card-like inside the panel */
+/* Lists inside panel */
 ion-list[inset] {
   margin: 16px;
   border-radius: 12px;
@@ -334,7 +297,7 @@ ion-item {
   color: var(--text);
 }
 
-/* Buttons — glassy neutrals + cyan accent */
+/* Buttons */
 .app-panel ion-button {
   --border-radius: 12px;
   --padding-top: 12px;
@@ -351,7 +314,6 @@ ion-item {
   --background: transparent;
   --border-color: rgba(125, 211, 252, 0.35);
 }
-/* primary/strong */
 .app-panel ion-button[strong],
 .form-actions ion-button[strong] {
   --background: linear-gradient(180deg, var(--brand), var(--brand-strong));
@@ -369,7 +331,7 @@ ion-item {
   --border-radius: 12px;
 }
 
-/* ---------- Readability: sizes, weights, spacing ---------- */
+/* Readability tweaks */
 .app-panel .row-lg {
   --min-height: 72px;
 }
@@ -380,23 +342,21 @@ ion-item {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.2px;
 }
-/* total row label + amount */
 .app-panel .total-row ion-label {
-  font-size: var(--text-lg); /* was text-md */
-  font-weight: var(--w-sb); /* more presence */
+  font-size: var(--text-lg);
+  font-weight: var(--w-sb);
   letter-spacing: 0.02em;
   color: var(--text);
 }
 .app-panel .total-row ion-note {
-  font-size: 20px; /* slightly larger than --text-lg */
+  font-size: 20px;
   font-weight: var(--w-b);
   color: #eaf2ff;
 }
-
 .app-panel .tx-row h2 {
   margin: 0 0 2px;
   font-size: var(--text-lg);
-  font-weight: var(--w-sb); /* down from bold */
+  font-weight: var(--w-sb);
   line-height: var(--lh-tight);
   color: #e9f2ff;
 }
@@ -405,12 +365,11 @@ ion-item {
   font-size: var(--text-sm);
   color: var(--muted);
 }
-
 .app-panel .tx-row ion-chip {
   transform: translateY(-2px);
 }
 
-/* Chip label style */
+/* Chip */
 ion-chip {
   background: var(--chip-bg);
   color: var(--chip-text);
@@ -421,22 +380,8 @@ ion-chip {
   font-size: var(--text-xs);
 }
 
-/* Accounts / Categories list rows */
-.app-panel .list-row ion-label {
-  font-size: var(--text-md);
-  font-weight: var(--w-sb);
-}
-
-/* Small screens: tuck closer to hero & tab bar */
-@media (max-width: 720px) {
-  :root {
-    --panel-top-space: 260px;
-    --panel-bottom-space: 56px;
-  }
-}
-
 /* =======================
-   Dialog mode (IonModal with class="dialog-modal")
+   Dialog / Modal
    ======================= */
 .dialog-modal::part(content) {
   --background: transparent;
@@ -452,7 +397,6 @@ ion-chip {
   backdrop-filter: blur(6px) saturate(1.05);
 }
 
-/* Centered, narrower panel */
 .dialog-modal .app-panel.dialog {
   position: relative;
   inset: auto;
@@ -493,8 +437,6 @@ ion-chip {
   --padding-top: 10px;
   --padding-bottom: 10px;
 }
-
-/* Compact form sizing inside dialog */
 .app-panel.dialog ion-list[inset] {
   margin: 12px;
 }
@@ -506,7 +448,6 @@ ion-chip {
 /* =======================
    Datetime & Select styling
    ======================= */
-/* trigger buttons that open date pickers */
 .dt-trigger::part(native),
 ion-datetime-button::part(native) {
   background: rgba(255, 255, 255, 0.04);
@@ -520,7 +461,6 @@ ion-datetime-button::part(native) {
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* popover datetime (inline calendars) */
 .dt-pop ion-datetime,
 .date-modal ion-datetime {
   --background: #0f172a;
@@ -575,11 +515,7 @@ ion-popover.select-pop ion-item {
   gap: 12px;
   padding: 0 12px 12px;
 }
-@media (max-width: 720px) {
-  .date-modal .range-grid {
-    grid-template-columns: 1fr;
-  }
-}
+
 .date-modal ion-list[inset] {
   margin: 12px;
   border-radius: 12px;
@@ -610,8 +546,6 @@ ion-popover.select-pop ion-item {
 .tx-search .searchbar-input {
   font-size: var(--text-sm);
 }
-
-/* show & style the OUTSIDE cancel button that appears next to searchbar */
 .tx-search + .searchbar-cancel-button {
   display: flex;
   align-items: center;
@@ -623,4 +557,276 @@ ion-popover.select-pop ion-item {
   border: 1px solid var(--border);
   border-radius: 10px;
   line-height: 1;
+}
+
+/* =======================
+   SIGN-IN: signed-out view & layout
+   ======================= */
+
+/* Hide band/hero when signed out (desktop + mobile) */
+body.no-hero .bg-root,
+body.no-hero .hero,
+body.no-hero .bg-photo,
+body.no-hero .bg-photo::before,
+body.no-hero .bg-overlay,
+body.no-hero .bg-noise {
+  display: none !important;
+}
+
+/* use theme background when signed out */
+body.no-hero,
+body.no-hero ion-app {
+  background: var(--bg, #000) !important;
+}
+
+/* center the sign-in panel within IonContent scroller */
+.signin-content::part(scroll) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px;
+}
+/* fallback centering if ::part is ignored */
+.signin-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signin-panel {
+  width: min(94vw, 500px);
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(14px) saturate(1.15);
+  box-shadow: 0 20px 60px rgba(2, 8, 23, 0.55);
+  padding: 22px 18px 20px;
+  text-align: center;
+}
+
+/* Brand title (same as hero) */
+.signin-brand {
+  margin: 4px 0 2px;
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: var(--w-med);
+  letter-spacing: 0.2px;
+  background: var(--title-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 4px 20px rgba(0, 153, 255, 0.16);
+}
+.signin-tag {
+  margin: 0 0 14px;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+/* Inputs & button */
+.signin-list {
+  margin-bottom: 12px;
+}
+.signin-panel ion-button {
+  --border-radius: 12px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  --background: linear-gradient(180deg, var(--brand), var(--brand-strong));
+  --color: #03202e;
+  --box-shadow: 0 12px 32px rgba(56, 189, 248, 0.35);
+}
+.signin-msg {
+  margin-top: 10px;
+  opacity: 0.95;
+}
+
+/* =========================================
+   Phone layout (<= 720px)
+   ========================================= */
+@media (max-width: 720px) {
+  /* hero spacing + contrast */
+  .hero {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 28px);
+    padding-bottom: 6px;
+    z-index: 0;
+  }
+  .hero-title {
+    color: #eef6ff;
+    text-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+  }
+  .bg-overlay {
+    background: radial-gradient(
+        60% 46% at 20% -10%,
+        rgba(0, 0, 0, 0.4),
+        transparent 60%
+      ),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.58));
+  }
+
+  :root {
+    --panel-top-space: calc(env(safe-area-inset-top, 0px) + 152px);
+    --panel-bottom-space: calc(64px + env(safe-area-inset-bottom, 0px));
+    --surface: rgba(12, 16, 24, 0.82);
+  }
+  .app-panel {
+    backdrop-filter: saturate(120%) blur(6px);
+  }
+
+  /* header actions grid */
+  .panel-actions {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "search search search"
+      "back   date   export";
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 10px;
+    padding-top: 2px;
+  }
+  .panel-actions .tx-search {
+    grid-area: search;
+    width: 100%;
+  }
+  .tx-search .searchbar-input {
+    height: 38px;
+  }
+  .panel-actions .btn-back {
+    grid-area: back;
+    justify-self: start;
+  }
+  .panel-actions ion-datetime-button {
+    grid-area: date;
+    justify-self: center;
+  }
+  .panel-actions .btn-export,
+  .panel-actions .btn-add {
+    grid-area: export;
+    justify-self: end;
+  }
+
+  .panel-actions .btn-back,
+  .panel-actions ion-datetime-button,
+  .panel-actions .btn-export,
+  .panel-actions .btn-add {
+    height: 38px;
+    font-size: 14px;
+    --padding-top: 10px;
+    --padding-bottom: 10px;
+    --padding-start: 12px;
+    --padding-end: 12px;
+  }
+
+  .panel-actions::after {
+    content: "";
+    grid-column: 1 / -1;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      rgba(148, 163, 184, 0.06),
+      rgba(148, 163, 184, 0.18),
+      rgba(148, 163, 184, 0.06)
+    );
+    margin-top: 2px;
+  }
+
+  /* dialogs below the notch */
+  .dialog-modal::part(content),
+  .date-modal::part(content) {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    min-height: 100vh;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 48px) !important;
+    padding-bottom: 32px !important;
+  }
+  .dialog-modal .app-panel.dialog {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    max-height: 72vh !important;
+    width: 96vw !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+  .dialog-modal .app-panel.dialog .panel-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 14px;
+  }
+  @supports (-webkit-touch-callout: none) {
+    .dialog-modal::part(content),
+    .date-modal::part(content) {
+      padding-top: calc(env(safe-area-inset-top, 0px) + 40px);
+    }
+  }
+  .dialog-modal::part(backdrop) {
+    z-index: 9999;
+  }
+
+  ion-list[inset] {
+    margin: 12px;
+    border-radius: 12px;
+  }
+  .app-panel .row-lg {
+    --min-height: 64px;
+  }
+
+  /* FAB above home indicator */
+  ion-fab[slot="fixed"] {
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 16px !important;
+  }
+
+  /* sign-in spacing on phones */
+  .signin-content::part(scroll) {
+    padding: 16px;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 36px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  }
+  .signin-panel {
+    width: 94vw;
+    border-radius: 14px;
+    padding: 20px 16px 18px;
+  }
+  .signin-brand {
+    font-size: 30px;
+  }
+}
+/* Profile page actions (compact, aligned right) */
+.profile-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 8px 16px 16px;
+}
+
+.profile-actions ion-button {
+  width: auto; /* no full-width */
+  --border-radius: 10px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+}
+
+/* status + note alignment */
+.profile-status {
+  padding: 0 16px 8px;
+}
+.profile-note {
+  display: block;
+  padding: 0 16px 16px;
+  opacity: 0.75;
+}
+
+/* On small screens, stack actions neatly */
+@media (max-width: 720px) {
+  .profile-actions {
+    justify-content: space-between;
+    padding: 8px 12px 14px;
+  }
 }

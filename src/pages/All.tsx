@@ -29,6 +29,7 @@ import { useState } from "react";
 import AddTransaction from "./AddTransaction";
 import EditTransaction from "./EditTransaction";
 import { txMatchesQuery } from "../utils/search";
+import { personCircleOutline } from "ionicons/icons";
 
 export default function All() {
   const {

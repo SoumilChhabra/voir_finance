@@ -1,12 +1,9 @@
 // src/auth/SignIn.tsx
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
-import { Capacitor } from "@capacitor/core"; // ← add
+import { Capacitor } from "@capacitor/core";
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
   IonList,
   IonItem,
@@ -23,16 +20,13 @@ export default function SignIn() {
 
   const send = async () => {
     setErr(null);
-
     const isNative = Capacitor.getPlatform() !== "web";
-    const nativeRedirect = "com.soumilchhabra.penny://auth/callback";
+    const nativeRedirect = "com.soumilchhabra.voir://auth/callback";
     const webRedirect = window.location.origin + "/auth/callback";
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: isNative ? nativeRedirect : webRedirect,
-      },
+      options: { emailRedirectTo: isNative ? nativeRedirect : webRedirect },
     });
 
     if (error) setErr(error.message);
@@ -41,34 +35,38 @@ export default function SignIn() {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Sign in</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent fullscreen>
-        <IonList inset>
-          <IonItem>
-            <IonLabel position="stacked">Email</IonLabel>
-            <IonInput
-              type="email"
-              value={email}
-              onIonInput={(e) => setEmail(String(e.detail.value ?? ""))}
-            />
-          </IonItem>
-        </IonList>
-        <div style={{ padding: 16 }}>
+      {/* dark, centered canvas; no hero/wave */}
+      <IonContent fullscreen className="signin-content">
+        <div className="signin-panel">
+          {/* App title styled like the home hero */}
+          <h1 className="signin-brand">Voir</h1>
+          <p className="signin-tag">Sign in</p>
+
+          <IonList inset className="signin-list">
+            <IonItem>
+              <IonLabel position="stacked">Email</IonLabel>
+              <IonInput
+                type="email"
+                value={email}
+                onIonInput={(e) => setEmail(String(e.detail.value ?? ""))}
+                autocomplete="email"
+                inputmode="email"
+              />
+            </IonItem>
+          </IonList>
+
           <IonButton expand="block" onClick={send} disabled={!email}>
             Send magic link
           </IonButton>
+
           {sent && (
             <IonText color="success">
-              <p>Check your email to finish sign in.</p>
+              <p className="signin-msg">Check your email to finish sign in.</p>
             </IonText>
           )}
           {err && (
             <IonText color="danger">
-              <p>{err}</p>
+              <p className="signin-msg">{err}</p>
             </IonText>
           )}
         </div>

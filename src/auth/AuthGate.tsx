@@ -7,6 +7,14 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // inside AuthGate (after you update session)
+  // src/auth/AuthGate.tsx
+
+  useEffect(() => {
+    document.body.classList.toggle("no-hero", !session);
+    return () => document.body.classList.remove("no-hero");
+  }, [session]);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null);

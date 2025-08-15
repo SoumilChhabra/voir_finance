@@ -45,7 +45,11 @@ export default function AccountDetail() {
           title={account?.name ?? "Account"}
           actions={
             <>
-              <IonButton fill="outline" onClick={() => history.goBack()}>
+              <IonButton
+                fill="outline"
+                className="btn-back"
+                onClick={() => history.goBack()}
+              >
                 <IonIcon icon={chevronBack} slot="start" />
                 Back
               </IonButton>

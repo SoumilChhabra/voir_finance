@@ -48,7 +48,11 @@ export default function CategoryDetail() {
           title={category?.name ?? "Category"}
           actions={
             <>
-              <IonButton fill="outline" onClick={() => history.goBack()}>
+              <IonButton
+                fill="outline"
+                className="btn-back"
+                onClick={() => history.goBack()}
+              >
                 <IonIcon icon={chevronBack} slot="start" />
                 Back
               </IonButton>
