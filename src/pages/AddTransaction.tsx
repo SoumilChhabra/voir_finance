@@ -25,7 +25,9 @@ type AddTxProps = { onClose?: () => void; asPage?: boolean };
 export default function AddTransaction(props: AddTxProps) {
   const history = useHistory();
   const { accounts, categories, addTransaction } = useStore();
-  const hasBasics = accounts.length > 0 && categories.length > 0;
+
+  const hasBasics =
+    (accounts?.length ?? 0) > 0 && (categories?.length ?? 0) > 0;
 
   const today = new Date().toISOString().slice(0, 10);
   const [amount, setAmount] = useState("");
@@ -35,6 +37,7 @@ export default function AddTransaction(props: AddTxProps) {
   const [merchant, setMerchant] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Restore last-used selections when available
   useEffect(() => {
     (async () => {
       const a = await getPrefStr("last_account_id");
@@ -48,8 +51,8 @@ export default function AddTransaction(props: AddTxProps) {
     hasBasics &&
     amount.trim() !== "" &&
     !isNaN(Number(amount)) &&
-    accountId &&
-    categoryId;
+    !!accountId &&
+    !!categoryId;
 
   const handleClose = () => {
     if (props?.onClose) props.onClose();
@@ -83,7 +86,25 @@ export default function AddTransaction(props: AddTxProps) {
       }
     >
       {!hasBasics ? (
-        <></>
+        // New-user guard: guide them to create the basics first
+        <div className="tx-setup">
+          <h3>Finish setup</h3>
+          <p>
+            Add at least one account and one category to create a transaction.
+          </p>
+          <div className="tx-setup-actions">
+            <IonButton routerLink="/add-account" onClick={handleClose}>
+              Add account
+            </IonButton>
+            <IonButton
+              routerLink="/add-category"
+              fill="outline"
+              onClick={handleClose}
+            >
+              Add category
+            </IonButton>
+          </div>
+        </div>
       ) : (
         <>
           <IonList inset>
@@ -102,7 +123,7 @@ export default function AddTransaction(props: AddTxProps) {
               <IonLabel>Account</IonLabel>
               <IonSelect
                 interface="popover"
-                interfaceOptions={{ cssClass: "select-pop" }} // for styling
+                interfaceOptions={{ cssClass: "select-pop" }}
                 value={accountId}
                 onIonChange={(e) => setAccountId(e.detail.value)}
               >
@@ -190,6 +211,7 @@ export default function AddTransaction(props: AddTxProps) {
       </IonPage>
     );
   }
+
   // Modal version: no IonPage/IonContent wrapper
   return Body;
 }
