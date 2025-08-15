@@ -22,7 +22,8 @@ import { useStore } from "../data/store";
 import { formatCurrency } from "../utils/money";
 import AddAccount from "./AddAccount";
 import EditAccount from "./EditAccount";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useHistory } from "react-router";
 
 export default function Accounts() {
   const { accounts, transactions, deleteAccount } = useStore();
@@ -34,6 +35,26 @@ export default function Accounts() {
   const [editId, setEditId] = useState<string | null>(null);
   const [presentAlert] = useIonAlert();
   const [toast] = useIonToast();
+
+  const location = useLocation();
+  const history = useHistory();
+  const openedFromParam = useRef(false);
+
+  // Auto-open Add modal if ?add=1 is present or if user has no accounts yet
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    const shouldOpen = sp.get("add") === "1" || accounts.length === 0;
+
+    if (!openedFromParam.current && shouldOpen) {
+      openedFromParam.current = true;
+      setShowAddAcc(true);
+
+      // Clean the URL so refresh/back doesn't keep reopening
+      if (sp.get("add") === "1") {
+        history.replace("/tabs/accounts");
+      }
+    }
+  }, [location.search, accounts.length, history]);
 
   const confirmDelete = (id: string) =>
     presentAlert({

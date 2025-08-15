@@ -23,7 +23,8 @@ import { useStore } from "../data/store";
 import { formatCurrency } from "../utils/money";
 import AddCategory from "./AddCategory";
 import EditCategory from "./EditCategory";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useHistory } from "react-router";
 
 export default function Categories() {
   const { categories, transactions, deleteCategory } = useStore();
@@ -35,6 +36,25 @@ export default function Categories() {
   const [editId, setEditId] = useState<string | null>(null);
   const [presentAlert] = useIonAlert();
   const [toast] = useIonToast();
+
+  const location = useLocation();
+  const history = useHistory();
+  const openedFromParam = useRef(false);
+
+  // Auto-open Add modal if ?add=1 is present or if user has no categories yet
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    const shouldOpen = sp.get("add") === "1" || categories.length === 0;
+
+    if (!openedFromParam.current && shouldOpen) {
+      openedFromParam.current = true;
+      setShowAddCat(true);
+
+      if (sp.get("add") === "1") {
+        history.replace("/tabs/categories");
+      }
+    }
+  }, [location.search, categories.length, history]);
 
   const confirmDelete = (id: string) =>
     presentAlert({

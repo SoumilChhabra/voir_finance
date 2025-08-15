@@ -24,6 +24,16 @@ type AddTxProps = { onClose?: () => void; asPage?: boolean };
 
 export default function AddTransaction(props: AddTxProps) {
   const history = useHistory();
+  const go = (path: string) => {
+    if (props?.onClose) {
+      // close the modal, then navigate
+      props.onClose();
+      setTimeout(() => history.push(path), 0);
+    } else {
+      history.push(path);
+    }
+  };
+
   const { accounts, categories, addTransaction } = useStore();
 
   const hasBasics =
@@ -93,13 +103,12 @@ export default function AddTransaction(props: AddTxProps) {
             Add at least one account and one category to create a transaction.
           </p>
           <div className="tx-setup-actions">
-            <IonButton routerLink="/add-account" onClick={handleClose}>
+            <IonButton onClick={() => go("/tabs/accounts?add=1")}>
               Add account
             </IonButton>
             <IonButton
-              routerLink="/add-category"
               fill="outline"
-              onClick={handleClose}
+              onClick={() => go("/tabs/categories?add=1")}
             >
               Add category
             </IonButton>
