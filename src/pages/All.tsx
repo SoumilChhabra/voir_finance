@@ -152,7 +152,7 @@ export default function All() {
           title="All"
           className="compact-header"
           actions={
-            <div className="panel-actions-dropdown">
+            <>
               <DateRangeButton />
               <IonSearchbar
                 className="tx-search"
@@ -164,24 +164,38 @@ export default function All() {
                 showClearButton="never"
               />
               <IonButton
-                className="btn-more"
+                className="btn-export"
                 fill="outline"
-                onClick={toggleDropdown}
-                ref={dropdownRef}
+                onClick={exportCurrentRange}
               >
-                <IonIcon icon={ellipsisVertical} />
+                <IonIcon icon={downloadOutline} />
+                EXPORT
               </IonButton>
 
-              {/* Dropdown menu */}
-              <div
-                className={`panel-dropdown-menu ${showDropdown ? "show" : ""}`}
-              >
-                <IonItem onClick={exportCurrentRange}>
-                  <IonIcon slot="start" icon={downloadOutline} />
-                  <IonLabel>Export</IonLabel>
-                </IonItem>
+              {/* Mobile dropdown - hidden on desktop via CSS */}
+              <div className="panel-actions-dropdown">
+                <IonButton
+                  className="btn-more"
+                  fill="outline"
+                  onClick={toggleDropdown}
+                  ref={dropdownRef}
+                >
+                  <IonIcon icon={ellipsisVertical} />
+                </IonButton>
+
+                {/* Dropdown menu */}
+                <div
+                  className={`panel-dropdown-menu ${
+                    showDropdown ? "show" : ""
+                  }`}
+                >
+                  <IonItem onClick={exportCurrentRange}>
+                    <IonIcon slot="start" icon={downloadOutline} />
+                    <IonLabel>Export</IonLabel>
+                  </IonItem>
+                </div>
               </div>
-            </div>
+            </>
           }
         >
           <IonItem lines="full" className="total-row row-lg">

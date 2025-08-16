@@ -50,12 +50,10 @@ export default function DateRangeButton() {
 
   return (
     <>
-      <IonButtons slot="end">
-        <IonButton onClick={() => setOpen(true)} className="date-range-button">
-          <IonIcon icon={calendar} slot="start" />
-          {formatRangeLabel(dateRange.start, dateRange.end)}
-        </IonButton>
-      </IonButtons>
+      <IonButton onClick={() => setOpen(true)} className="date-range-button">
+        <IonIcon icon={calendar} slot="start" />
+        {formatRangeLabel(dateRange.start, dateRange.end)}
+      </IonButton>
 
       {/* Centered glass dialog, like Add/Edit */}
       <IonModal
