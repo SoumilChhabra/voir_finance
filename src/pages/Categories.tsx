@@ -37,9 +37,30 @@ export default function Categories() {
   const [presentAlert] = useIonAlert();
   const [toast] = useIonToast();
 
+  // Refs for all sliding items to reset their position
+  const slidingRefs = useRef<{ [key: string]: HTMLIonItemSlidingElement }>({});
+
   const location = useLocation();
   const history = useHistory();
   const openedFromParam = useRef(false);
+
+  // Function to reset all sliding items to closed position
+  const resetAllSlidingItems = () => {
+    Object.values(slidingRefs.current).forEach((slidingRef) => {
+      if (slidingRef) {
+        slidingRef.close();
+      }
+    });
+  };
+
+  // Handle edit modal close and reset sliding items
+  const handleEditClose = () => {
+    setEditId(null);
+    // Reset all sliding items to closed position
+    setTimeout(() => {
+      resetAllSlidingItems();
+    }, 100);
+  };
 
   // Auto-open Add modal if ?add=1 is present or if user has no categories yet
   useEffect(() => {
@@ -86,14 +107,18 @@ export default function Categories() {
       <IonContent fullscreen scrollY={false}>
         <Shell
           title="Categories"
+          className="compact-header"
           actions={
-            <>
+            <div className="panel-actions-dropdown">
               <DateRangeButton />
-              <IonButton onClick={() => setShowAddCat(true)}>
+              <IonButton
+                className="btn-add"
+                onClick={() => setShowAddCat(true)}
+              >
                 <IonIcon icon={add} slot="start" />
                 Add
               </IonButton>
-            </>
+            </div>
           }
         >
           {categories.length === 0 ? (
@@ -106,7 +131,14 @@ export default function Categories() {
           ) : (
             <IonList inset>
               {categories.map((c) => (
-                <IonItemSliding key={c.id}>
+                <IonItemSliding
+                  key={c.id}
+                  ref={(el) => {
+                    if (el) {
+                      slidingRefs.current[c.id] = el;
+                    }
+                  }}
+                >
                   <IonItem
                     routerLink={`/category/${c.id}`}
                     className="list-row row-lg"
@@ -159,13 +191,11 @@ export default function Categories() {
           {/* Edit modal */}
           <IonModal
             isOpen={!!editId}
-            onDidDismiss={() => setEditId(null)}
+            onDidDismiss={handleEditClose}
             className="dialog-modal"
             backdropDismiss
           >
-            {editId && (
-              <EditCategory id={editId} onClose={() => setEditId(null)} />
-            )}
+            {editId && <EditCategory id={editId} onClose={handleEditClose} />}
           </IonModal>
         </Shell>
       </IonContent>

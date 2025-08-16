@@ -51,7 +51,7 @@ export default function DateRangeButton() {
   return (
     <>
       <IonButtons slot="end">
-        <IonButton onClick={() => setOpen(true)}>
+        <IonButton onClick={() => setOpen(true)} className="date-range-button">
           <IonIcon icon={calendar} slot="start" />
           {formatRangeLabel(dateRange.start, dateRange.end)}
         </IonButton>

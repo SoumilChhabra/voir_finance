@@ -36,9 +36,30 @@ export default function Accounts() {
   const [presentAlert] = useIonAlert();
   const [toast] = useIonToast();
 
+  // Refs for all sliding items to reset their position
+  const slidingRefs = useRef<{ [key: string]: HTMLIonItemSlidingElement }>({});
+
   const location = useLocation();
   const history = useHistory();
   const openedFromParam = useRef(false);
+
+  // Function to reset all sliding items to closed position
+  const resetAllSlidingItems = () => {
+    Object.values(slidingRefs.current).forEach((slidingRef) => {
+      if (slidingRef) {
+        slidingRef.close();
+      }
+    });
+  };
+
+  // Handle edit modal close and reset sliding items
+  const handleEditClose = () => {
+    setEditId(null);
+    // Reset all sliding items to closed position
+    setTimeout(() => {
+      resetAllSlidingItems();
+    }, 100);
+  };
 
   // Auto-open Add modal if ?add=1 is present or if user has no accounts yet
   useEffect(() => {
@@ -86,14 +107,18 @@ export default function Accounts() {
       <IonContent fullscreen scrollY={false}>
         <Shell
           title="Accounts"
+          className="compact-header"
           actions={
-            <>
+            <div className="panel-actions-dropdown">
               <DateRangeButton />
-              <IonButton onClick={() => setShowAddAcc(true)}>
+              <IonButton
+                className="btn-add"
+                onClick={() => setShowAddAcc(true)}
+              >
                 <IonIcon icon={add} slot="start" />
                 Add
               </IonButton>
-            </>
+            </div>
           }
         >
           {accounts.length === 0 ? (
@@ -108,7 +133,14 @@ export default function Accounts() {
               {accounts.map((a) => {
                 const total = totals.get(a.id) ?? 0;
                 return (
-                  <IonItemSliding key={a.id}>
+                  <IonItemSliding
+                    key={a.id}
+                    ref={(el) => {
+                      if (el) {
+                        slidingRefs.current[a.id] = el;
+                      }
+                    }}
+                  >
                     <IonItem
                       routerLink={`/account/${a.id}`}
                       className="list-row row-lg"
@@ -155,13 +187,11 @@ export default function Accounts() {
           {/* Edit modal */}
           <IonModal
             isOpen={!!editId}
-            onDidDismiss={() => setEditId(null)}
+            onDidDismiss={handleEditClose}
             className="dialog-modal"
             backdropDismiss
           >
-            {editId && (
-              <EditAccount id={editId} onClose={() => setEditId(null)} />
-            )}
+            {editId && <EditAccount id={editId} onClose={handleEditClose} />}
           </IonModal>
         </Shell>
       </IonContent>

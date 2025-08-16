@@ -46,8 +46,9 @@ export default function CategoryDetail() {
       <IonContent fullscreen scrollY={false}>
         <Shell
           title={category?.name ?? "Category"}
+          className="compact-header"
           actions={
-            <>
+            <div className="panel-actions-dropdown">
               <IonButton
                 fill="outline"
                 className="btn-back"
@@ -66,7 +67,7 @@ export default function CategoryDetail() {
                 showClearButton="never"
               />
               <DateRangeButton />
-            </>
+            </div>
           }
         >
           <IonItem lines="full" className="total-row row-lg">

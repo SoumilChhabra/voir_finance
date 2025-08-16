@@ -18,14 +18,14 @@ import {
   IonModal,
   IonSearchbar,
 } from "@ionic/react";
-import { add, downloadOutline } from "ionicons/icons";
+import { add, downloadOutline, ellipsisVertical } from "ionicons/icons";
 import DateRangeButton from "../components/DateRangeButton";
 import { useStore } from "../data/store";
 import { formatCurrency } from "../utils/money";
 import { formatDateLocal } from "../utils/date";
 import { downloadCsv, toCsv } from "../utils/csv";
 import Shell from "../components/Shell";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import AddTransaction from "./AddTransaction";
 import EditTransaction from "./EditTransaction";
 import { txMatchesQuery } from "../utils/search";
@@ -55,6 +55,28 @@ export default function All() {
   // modal state
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+
+  // dropdown state
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLIonButtonElement>(null);
+
+  // Refs for all sliding items to reset their position
+  const slidingRefs = useRef<{ [key: string]: HTMLIonItemSlidingElement }>({});
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const confirmDelete = (id: string) =>
     presentAlert({
@@ -98,6 +120,29 @@ export default function All() {
     const csv = toCsv(rows);
     const name = `transactions_${dateRange.start}_to_${dateRange.end}.csv`;
     downloadCsv(csv, name);
+    setShowDropdown(false);
+  };
+
+  const toggleDropdown = () => {
+    setShowDropdown(!showDropdown);
+  };
+
+  // Function to reset all sliding items to closed position
+  const resetAllSlidingItems = () => {
+    Object.values(slidingRefs.current).forEach((slidingRef) => {
+      if (slidingRef) {
+        slidingRef.close();
+      }
+    });
+  };
+
+  // Handle edit modal close and reset sliding items
+  const handleEditClose = () => {
+    setEditId(null);
+    // Reset all sliding items to closed position
+    setTimeout(() => {
+      resetAllSlidingItems();
+    }, 100);
   };
 
   return (
@@ -105,8 +150,10 @@ export default function All() {
       <IonContent fullscreen scrollY={false}>
         <Shell
           title="All"
+          className="compact-header"
           actions={
-            <>
+            <div className="panel-actions-dropdown">
+              <DateRangeButton />
               <IonSearchbar
                 className="tx-search"
                 debounce={200}
@@ -116,13 +163,25 @@ export default function All() {
                 showCancelButton="focus"
                 showClearButton="never"
               />
-
-              <DateRangeButton />
-              <IonButton fill="outline" onClick={exportCurrentRange}>
-                <IonIcon slot="start" icon={downloadOutline} />
-                Export
+              <IonButton
+                className="btn-more"
+                fill="outline"
+                onClick={toggleDropdown}
+                ref={dropdownRef}
+              >
+                <IonIcon icon={ellipsisVertical} />
               </IonButton>
-            </>
+
+              {/* Dropdown menu */}
+              <div
+                className={`panel-dropdown-menu ${showDropdown ? "show" : ""}`}
+              >
+                <IonItem onClick={exportCurrentRange}>
+                  <IonIcon slot="start" icon={downloadOutline} />
+                  <IonLabel>Export</IonLabel>
+                </IonItem>
+              </div>
+            </div>
           }
         >
           <IonItem lines="full" className="total-row row-lg">
@@ -146,7 +205,14 @@ export default function All() {
               const account = accountById[t.accountId];
               const category = categoryById[t.categoryId];
               return (
-                <IonItemSliding key={t.id}>
+                <IonItemSliding
+                  key={t.id}
+                  ref={(el) => {
+                    if (el) {
+                      slidingRefs.current[t.id] = el;
+                    }
+                  }}
+                >
                   <IonItem detail={false} className="tx-row row-lg">
                     <IonLabel>
                       <h2>{t.merchant ?? "Transaction"}</h2>
@@ -210,12 +276,12 @@ export default function All() {
           {/* Edit modal */}
           <IonModal
             isOpen={!!editId}
-            onDidDismiss={() => setEditId(null)}
+            onDidDismiss={handleEditClose}
             className="dialog-modal"
             backdropDismiss
           >
             {editId && (
-              <EditTransaction id={editId} onClose={() => setEditId(null)} />
+              <EditTransaction id={editId} onClose={handleEditClose} />
             )}
           </IonModal>
         </Shell>

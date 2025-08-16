@@ -1,5 +1,5 @@
 // src/pages/EditAccount.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   IonPage,
   IonContent,
@@ -25,6 +25,8 @@ export default function EditAccount({ id: propId, onClose, asPage }: Props) {
 
   const history = useHistory();
   const { accountById, updateAccount } = useStore();
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   const acct = id ? accountById[id] : undefined;
 
@@ -34,6 +36,62 @@ export default function EditAccount({ id: propId, onClose, asPage }: Props) {
   );
   const [last4, setLast4] = useState(acct?.last4 ?? "");
   const [currency, setCurrency] = useState(acct?.currency ?? "CAD");
+
+  // Keyboard detection
+  useEffect(() => {
+    let initialHeight = window.innerHeight;
+    let timeoutId: NodeJS.Timeout;
+
+    const handleResize = () => {
+      const currentHeight = window.innerHeight;
+      const heightDifference = initialHeight - currentHeight;
+      
+      // If height decreased significantly, keyboard is likely open
+      if (heightDifference > 150) {
+        setIsKeyboardOpen(true);
+        if (modalRef.current) {
+          modalRef.current.classList.add("keyboard-open");
+        }
+      } else {
+        setIsKeyboardOpen(false);
+        if (modalRef.current) {
+          modalRef.current.classList.remove("keyboard-open");
+        }
+      }
+    };
+
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "ION-INPUT" || target.tagName === "ION-SELECT") {
+        // Add a small delay to allow the keyboard to open
+        timeoutId = setTimeout(() => {
+          if (modalRef.current) {
+            modalRef.current.classList.add("keyboard-open");
+          }
+        }, 300);
+      }
+    };
+
+    const handleBlur = () => {
+      // Remove keyboard-open class when focus is lost
+      timeoutId = setTimeout(() => {
+        if (modalRef.current) {
+          modalRef.current.classList.remove("keyboard-open");
+        }
+      }, 100);
+    };
+
+    window.addEventListener("resize", handleResize);
+    document.addEventListener("focusin", handleFocus);
+    document.addEventListener("focusout", handleBlur);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      document.removeEventListener("focusin", handleFocus);
+      document.removeEventListener("focusout", handleBlur);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, []);
 
   // if the account loads later, seed the form
   useEffect(() => {
@@ -69,6 +127,7 @@ export default function EditAccount({ id: propId, onClose, asPage }: Props) {
           <IonIcon icon={close} slot="start" /> Close
         </IonButton>
       }
+      ref={modalRef}
     >
       {!acct ? (
         <div style={{ padding: 16 }}>
@@ -79,61 +138,63 @@ export default function EditAccount({ id: propId, onClose, asPage }: Props) {
         </div>
       ) : (
         <>
-          <IonList inset>
-            <IonItem>
-              <IonLabel position="stacked">Name</IonLabel>
-              <IonInput
-                value={name}
-                onIonInput={(e) => setName(String(e.detail.value ?? ""))}
-              />
-            </IonItem>
+          <div className="form-content">
+            <IonList inset>
+              <IonItem>
+                <IonLabel position="stacked">Name</IonLabel>
+                <IonInput
+                  value={name}
+                  onIonInput={(e) => setName(String(e.detail.value ?? ""))}
+                />
+              </IonItem>
 
-            <IonItem>
-              <IonLabel>Type</IonLabel>
-              <IonSelect
-                interface="popover"
-                interfaceOptions={{ cssClass: "select-pop" }}
-                value={type}
-                onIonChange={(e) => setType(e.detail.value)}
-              >
-                <IonSelectOption value="credit">Credit</IonSelectOption>
-                <IonSelectOption value="debit">Debit</IonSelectOption>
-                <IonSelectOption value="cash">Cash</IonSelectOption>
-              </IonSelect>
-            </IonItem>
+              <IonItem>
+                <IonLabel>Type</IonLabel>
+                <IonSelect
+                  interface="popover"
+                  interfaceOptions={{ cssClass: "select-pop" }}
+                  value={type}
+                  onIonChange={(e) => setType(e.detail.value)}
+                >
+                  <IonSelectOption value="credit">Credit</IonSelectOption>
+                  <IonSelectOption value="debit">Debit</IonSelectOption>
+                  <IonSelectOption value="cash">Cash</IonSelectOption>
+                </IonSelect>
+              </IonItem>
 
-            <IonItem>
-              <IonLabel position="stacked">Last 4 (optional)</IonLabel>
-              <IonInput
-                inputmode="numeric"
-                maxlength={4}
-                value={last4}
-                onIonInput={(e) =>
-                  setLast4(String(e.detail.value ?? "").replace(/\D/g, ""))
-                }
-              />
-            </IonItem>
+              <IonItem>
+                <IonLabel position="stacked">Last 4 (optional)</IonLabel>
+                <IonInput
+                  inputmode="numeric"
+                  maxlength={4}
+                  value={last4}
+                  onIonInput={(e) =>
+                    setLast4(String(e.detail.value ?? "").replace(/\D/g, ""))
+                  }
+                />
+              </IonItem>
 
-            <IonItem>
-              <IonLabel>Currency</IonLabel>
-              <IonSelect
-                interface="popover"
-                interfaceOptions={{ cssClass: "select-pop" }}
-                value={currency}
-                onIonChange={(e) => setCurrency(e.detail.value)}
-              >
-                <IonSelectOption value="CAD">CAD</IonSelectOption>
-                <IonSelectOption value="USD">USD</IonSelectOption>
-                <IonSelectOption value="INR">INR</IonSelectOption>
-              </IonSelect>
-            </IonItem>
-          </IonList>
+              <IonItem>
+                <IonLabel>Currency</IonLabel>
+                <IonSelect
+                  interface="popover"
+                  interfaceOptions={{ cssClass: "select-pop" }}
+                  value={currency}
+                  onIonChange={(e) => setCurrency(e.detail.value)}
+                >
+                  <IonSelectOption value="CAD">CAD</IonSelectOption>
+                  <IonSelectOption value="USD">USD</IonSelectOption>
+                  <IonSelectOption value="INR">INR</IonSelectOption>
+                </IonSelect>
+              </IonItem>
+            </IonList>
+          </div>
 
           <div className="form-actions">
             <IonButton fill="outline" onClick={handleClose}>
               <IonIcon icon={close} slot="start" /> Cancel
             </IonButton>
-            <IonButton onClick={onSave} disabled={!canSave}>
+            <IonButton strong onClick={onSave} disabled={!canSave}>
               <IonIcon icon={save} slot="start" /> Save
             </IonButton>
           </div>

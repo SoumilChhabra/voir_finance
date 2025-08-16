@@ -1,5 +1,5 @@
 // src/pages/EditCategory.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   IonPage,
   IonContent,
@@ -23,11 +23,69 @@ export default function EditCategory({ id: propId, onClose, asPage }: Props) {
 
   const history = useHistory();
   const { categoryById, updateCategory } = useStore();
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   const cat = id ? categoryById[id] : undefined;
 
   const [name, setName] = useState(cat?.name ?? "");
   const [color, setColor] = useState(cat?.color ?? "#10b981");
+
+  // Keyboard detection
+  useEffect(() => {
+    let initialHeight = window.innerHeight;
+    let timeoutId: NodeJS.Timeout;
+
+    const handleResize = () => {
+      const currentHeight = window.innerHeight;
+      const heightDifference = initialHeight - currentHeight;
+      
+      // If height decreased significantly, keyboard is likely open
+      if (heightDifference > 150) {
+        setIsKeyboardOpen(true);
+        if (modalRef.current) {
+          modalRef.current.classList.add("keyboard-open");
+        }
+      } else {
+        setIsKeyboardOpen(false);
+        if (modalRef.current) {
+          modalRef.current.classList.remove("keyboard-open");
+        }
+      }
+    };
+
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "ION-INPUT") {
+        // Add a small delay to allow the keyboard to open
+        timeoutId = setTimeout(() => {
+          if (modalRef.current) {
+            modalRef.current.classList.add("keyboard-open");
+          }
+        }, 300);
+      }
+    };
+
+    const handleBlur = () => {
+      // Remove keyboard-open class when focus is lost
+      timeoutId = setTimeout(() => {
+        if (modalRef.current) {
+          modalRef.current.classList.remove("keyboard-open");
+        }
+      }, 100);
+    };
+
+    window.addEventListener("resize", handleResize);
+    document.addEventListener("focusin", handleFocus);
+    document.addEventListener("focusout", handleBlur);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      document.removeEventListener("focusin", handleFocus);
+      document.removeEventListener("focusout", handleBlur);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, []);
 
   useEffect(() => {
     if (!cat) return;
@@ -58,6 +116,7 @@ export default function EditCategory({ id: propId, onClose, asPage }: Props) {
           <IonIcon icon={close} slot="start" /> Close
         </IonButton>
       }
+      ref={modalRef}
     >
       {!cat ? (
         <div style={{ padding: 16 }}>
@@ -68,49 +127,51 @@ export default function EditCategory({ id: propId, onClose, asPage }: Props) {
         </div>
       ) : (
         <>
-          <IonList inset>
-            <IonItem>
-              <IonLabel position="stacked">Name</IonLabel>
-              <IonInput
-                value={name}
-                onIonInput={(e) => setName(String(e.detail.value ?? ""))}
-              />
-            </IonItem>
-
-            <IonItem>
-              <IonLabel position="stacked">Color</IonLabel>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  paddingTop: 8,
-                }}
-              >
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) =>
-                    setColor((e.target as HTMLInputElement).value)
-                  }
-                  style={{
-                    width: 44,
-                    height: 32,
-                    border: "none",
-                    background: "transparent",
-                    padding: 0,
-                  }}
+          <div className="form-content">
+            <IonList inset>
+              <IonItem>
+                <IonLabel position="stacked">Name</IonLabel>
+                <IonInput
+                  value={name}
+                  onIonInput={(e) => setName(String(e.detail.value ?? ""))}
                 />
-                <code style={{ opacity: 0.7 }}>{color}</code>
-              </div>
-            </IonItem>
-          </IonList>
+              </IonItem>
+
+              <IonItem>
+                <IonLabel position="stacked">Color</IonLabel>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    paddingTop: 8,
+                  }}
+                >
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) =>
+                      setColor((e.target as HTMLInputElement).value)
+                    }
+                    style={{
+                      width: 44,
+                      height: 32,
+                      border: "none",
+                      background: "transparent",
+                      padding: 0,
+                    }}
+                  />
+                  <code style={{ opacity: 0.7 }}>{color}</code>
+                </div>
+              </IonItem>
+            </IonList>
+          </div>
 
           <div className="form-actions">
             <IonButton fill="outline" onClick={handleClose}>
               <IonIcon icon={close} slot="start" /> Cancel
             </IonButton>
-            <IonButton onClick={onSave} disabled={!canSave}>
+            <IonButton strong onClick={onSave} disabled={!canSave}>
               <IonIcon icon={save} slot="start" /> Save
             </IonButton>
           </div>

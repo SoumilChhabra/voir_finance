@@ -17,13 +17,16 @@ import { close, save } from "ionicons/icons";
 import { useHistory } from "react-router";
 import Shell from "../components/Shell";
 import { useStore } from "../data/store";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getPrefStr, setPrefStr } from "../utils/prefs";
 
 type AddTxProps = { onClose?: () => void; asPage?: boolean };
 
 export default function AddTransaction(props: AddTxProps) {
   const history = useHistory();
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
   const go = (path: string) => {
     if (props?.onClose) {
       // close the modal, then navigate
@@ -46,6 +49,62 @@ export default function AddTransaction(props: AddTxProps) {
   const [date, setDate] = useState(today);
   const [merchant, setMerchant] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Keyboard detection
+  useEffect(() => {
+    let initialHeight = window.innerHeight;
+    let timeoutId: NodeJS.Timeout;
+
+    const handleResize = () => {
+      const currentHeight = window.innerHeight;
+      const heightDifference = initialHeight - currentHeight;
+
+      // If height decreased significantly, keyboard is likely open
+      if (heightDifference > 150) {
+        setIsKeyboardOpen(true);
+        if (modalRef.current) {
+          modalRef.current.classList.add("keyboard-open");
+        }
+      } else {
+        setIsKeyboardOpen(false);
+        if (modalRef.current) {
+          modalRef.current.classList.remove("keyboard-open");
+        }
+      }
+    };
+
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "ION-INPUT" || target.tagName === "ION-SELECT") {
+        // Add a small delay to allow the keyboard to open
+        timeoutId = setTimeout(() => {
+          if (modalRef.current) {
+            modalRef.current.classList.add("keyboard-open");
+          }
+        }, 300);
+      }
+    };
+
+    const handleBlur = () => {
+      // Remove keyboard-open class when focus is lost
+      timeoutId = setTimeout(() => {
+        if (modalRef.current) {
+          modalRef.current.classList.remove("keyboard-open");
+        }
+      }, 100);
+    };
+
+    window.addEventListener("resize", handleResize);
+    document.addEventListener("focusin", handleFocus);
+    document.addEventListener("focusout", handleBlur);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      document.removeEventListener("focusin", handleFocus);
+      document.removeEventListener("focusout", handleBlur);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, []);
 
   // Restore last-used selections when available
   useEffect(() => {
@@ -94,6 +153,7 @@ export default function AddTransaction(props: AddTxProps) {
           <IonIcon icon={close} slot="start" /> Close
         </IonButton>
       }
+      ref={modalRef}
     >
       {!hasBasics ? (
         // New-user guard: guide them to create the basics first
@@ -116,92 +176,97 @@ export default function AddTransaction(props: AddTxProps) {
         </div>
       ) : (
         <>
-          <IonList inset>
-            <IonItem>
-              <IonLabel position="stacked">Amount (CAD)</IonLabel>
-              <IonInput
-                type="number"
-                inputmode="decimal"
-                placeholder="0.00"
-                value={amount}
-                onIonInput={(e) => setAmount(String(e.detail.value ?? ""))}
-              />
-            </IonItem>
+          <div className="form-content">
+            <IonList inset>
+              <IonItem>
+                <IonLabel position="stacked">Amount (CAD)</IonLabel>
+                <IonInput
+                  type="number"
+                  inputmode="decimal"
+                  placeholder="0.00"
+                  value={amount}
+                  onIonInput={(e) => setAmount(String(e.detail.value ?? ""))}
+                />
+              </IonItem>
 
-            <IonItem>
-              <IonLabel>Account</IonLabel>
-              <IonSelect
-                interface="popover"
-                interfaceOptions={{ cssClass: "select-pop" }}
-                value={accountId}
-                onIonChange={(e) => setAccountId(e.detail.value)}
-              >
-                {accounts.map((a) => (
-                  <IonSelectOption key={a.id} value={a.id}>
-                    {a.name}
-                    {a.last4 ? ` •••• ${a.last4}` : ""}
-                  </IonSelectOption>
-                ))}
-              </IonSelect>
-            </IonItem>
+              <IonItem>
+                <IonLabel>Account</IonLabel>
+                <IonSelect
+                  interface="popover"
+                  interfaceOptions={{ cssClass: "select-pop" }}
+                  value={accountId}
+                  onIonChange={(e) => setAccountId(e.detail.value)}
+                >
+                  {accounts.map((a) => (
+                    <IonSelectOption key={a.id} value={a.id}>
+                      {a.name}
+                      {a.last4 ? ` •••• ${a.last4}` : ""}
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
+              </IonItem>
 
-            <IonItem>
-              <IonLabel>Category</IonLabel>
-              <IonSelect
-                interface="popover"
-                interfaceOptions={{ cssClass: "select-pop" }}
-                value={categoryId}
-                onIonChange={(e) => setCategoryId(e.detail.value)}
-              >
-                {categories.map((c) => (
-                  <IonSelectOption key={c.id} value={c.id}>
-                    {c.name}
-                  </IonSelectOption>
-                ))}
-              </IonSelect>
-            </IonItem>
+              <IonItem>
+                <IonLabel>Category</IonLabel>
+                <IonSelect
+                  interface="popover"
+                  interfaceOptions={{ cssClass: "select-pop" }}
+                  value={categoryId}
+                  onIonChange={(e) => setCategoryId(e.detail.value)}
+                >
+                  {categories.map((c) => (
+                    <IonSelectOption key={c.id} value={c.id}>
+                      {c.name}
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
+              </IonItem>
 
-            {/* Date */}
-            <IonItem>
-              <IonLabel>Date</IonLabel>
-              <div slot="end">
-                <IonDatetimeButton datetime="add-date" className="dt-trigger" />
-              </div>
-            </IonItem>
+              {/* Date */}
+              <IonItem>
+                <IonLabel>Date</IonLabel>
+                <div slot="end">
+                  <IonDatetimeButton
+                    datetime="add-date"
+                    className="dt-trigger"
+                  />
+                </div>
+              </IonItem>
 
-            <IonModal keepContentsMounted className="dt-pop">
-              <IonDatetime
-                id="add-date"
-                presentation="date"
-                value={date}
-                onIonChange={(e) =>
-                  setDate(String(e.detail.value).slice(0, 10))
-                }
-              />
-            </IonModal>
+              <IonModal keepContentsMounted className="dt-pop">
+                <IonDatetime
+                  id="add-date"
+                  presentation="date"
+                  value={date}
+                  onIonChange={(e) =>
+                    setDate(String(e.detail.value).slice(0, 10))
+                  }
+                />
+              </IonModal>
 
-            <IonItem>
-              <IonLabel position="stacked">Merchant</IonLabel>
-              <IonInput
-                value={merchant}
-                onIonInput={(e) => setMerchant(String(e.detail.value ?? ""))}
-              />
-            </IonItem>
+              <IonItem>
+                <IonLabel position="stacked">Merchant</IonLabel>
+                <IonInput
+                  value={merchant}
+                  onIonInput={(e) => setMerchant(String(e.detail.value ?? ""))}
+                />
+              </IonItem>
 
-            <IonItem>
-              <IonLabel position="stacked">Notes</IonLabel>
-              <IonInput
-                value={notes}
-                onIonInput={(e) => setNotes(String(e.detail.value ?? ""))}
-              />
-            </IonItem>
-          </IonList>
+              <IonItem>
+                <IonLabel position="stacked">Notes</IonLabel>
+                <IonInput
+                  value={notes}
+                  onIonInput={(e) => setNotes(String(e.detail.value ?? ""))}
+                />
+              </IonItem>
+            </IonList>
+          </div>
 
           <div className="form-actions">
             <IonButton fill="outline" onClick={handleClose}>
               <IonIcon icon={close} slot="start" /> Cancel
             </IonButton>
-            <IonButton onClick={onSave} disabled={!canSave}>
+            <IonButton strong onClick={onSave} disabled={!canSave}>
               <IonIcon icon={save} slot="start" /> Save
             </IonButton>
           </div>
