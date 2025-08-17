@@ -3636,3 +3636,30 @@ body.no-hero ion-app {
 .panel-dropdown-menu {
   display: none;
 }
+/* Desktop header layout (721px and above) */
+@media (min-width: 721px) {
+  .panel-header {
+    display: grid;
+    grid-template-columns: 1fr auto; /* Title | Actions */
+    align-items: center;
+    gap: 12px;
+  }
+
+  .panel-actions,
+  .panel-actions-dropdown {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    align-items: center;
+    gap: 12px;
+    justify-content: end; /* push everything to the right */
+    flex-wrap: nowrap; /* prevent wrapping */
+  }
+
+  /* Search bar width control */
+  .panel-actions .tx-search,
+  .panel-actions-dropdown .tx-search {
+    min-width: 220px;
+    max-width: 360px;
+  }
+}
