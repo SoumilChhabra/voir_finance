@@ -3663,3 +3663,71 @@ body.no-hero ion-app {
     max-width: 360px;
   }
 }
+
+/* Budget page */
+
+/* Budget top cards */
+.budget-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+.budget-cards .card {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.budget-cards .card.warn {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 85, 85, 0.08),
+    rgba(255, 85, 85, 0.02)
+  );
+}
+.budget-cards .card strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+/* Budget rows */
+.budget-row .head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.budget-row .name {
+  font-weight: var(--w-sb);
+}
+.budget-row .bar {
+  position: relative;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.budget-row .bar .fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-strong));
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.3);
+}
+.budget-row .nums {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* Mobile tweak */
+@media (max-width: 720px) {
+  .budget-cards {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+}

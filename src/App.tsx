@@ -40,6 +40,8 @@ import EditTransaction from "./pages/EditTransaction";
 import Background from "./components/Background";
 import Hero from "./components/Hero";
 import Profile from "./pages/Profile";
+import Budget from "./pages/Budget";
+import { wallet } from "ionicons/icons";
 
 import "@ionic/react/css/core.css";
 import "./theme/variables.css";
@@ -156,6 +158,7 @@ export default function App() {
                 <Route path="/account/:id" component={AccountDetail} exact />
                 <Route path="/category/:id" component={CategoryDetail} exact />
                 <Route path="/auth/callback" component={AuthCallback} exact />
+                <Route path="/tabs/budget" component={Budget} exact />
 
                 {/* Default redirect */}
                 <Route exact path="/">
@@ -177,6 +180,11 @@ export default function App() {
                 <IonTabButton tab="categories" href="/tabs/categories">
                   <IonIcon icon={pricetags} />
                   <IonLabel>Categories</IonLabel>
+                </IonTabButton>
+
+                <IonTabButton tab="budget" href="/tabs/budget">
+                  <IonIcon icon={wallet} />
+                  <IonLabel>Budget</IonLabel>
                 </IonTabButton>
 
                 <IonTabButton tab="profile" href="/tabs/profile">

@@ -59,6 +59,25 @@ type EditTxn = NewTxn & { id: string };
 type EditAccount = NewAccount & { id: string };
 type EditCategory = NewCategory & { id: string };
 
+type BudgetPeriod = { id: string; month: string; currency: string };
+type BudgetAllocation = {
+  id: string;
+  period_id: string;
+  category_id: string;
+  planned_cents: number;
+  rollover: boolean;
+  is_sinking: boolean;
+  carryover_cents: number;
+};
+type Income = {
+  id: string;
+  period_id: string;
+  source: string;
+  received_at: string; // 'YYYY-MM-DD'
+  amount_cents: number;
+  account_id?: string | null;
+};
+
 const mapTxn = (r: any) => ({
   id: r.id,
   accountId: r.account_id,
@@ -89,6 +108,9 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
     () => Object.fromEntries(categories.map((c) => [c.id, c])),
     [categories]
   );
+  const [period, setPeriod] = useState<BudgetPeriod | null>(null);
+  const [allocations, setAllocations] = useState<BudgetAllocation[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
 
   async function fetchAccounts() {
     const { data, error } = await supabase
@@ -121,6 +143,114 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
     if (error) throw error;
     setTx((data ?? []).map(mapTxn));
   }
+
+  async function ensurePeriodForMonth(monthISO: string) {
+    const uid = (await supabase.auth.getUser()).data.user?.id;
+    if (!uid) throw new Error("Not signed in");
+
+    // Call the helper function — or do a simple upsert if you prefer
+    const { data, error } = await supabase.rpc("ensure_budget_period", {
+      p_user: uid,
+      p_month: monthISO,
+    });
+    if (error) throw error;
+
+    const { data: p, error: e2 } = await supabase
+      .from("budget_periods")
+      .select("*")
+      .eq("id", data)
+      .single();
+    if (e2) throw e2;
+    setPeriod(p as BudgetPeriod);
+  }
+
+  async function fetchAllocations(periodId: string) {
+    const { data, error } = await supabase
+      .from("budget_allocations")
+      .select("*")
+      .eq("period_id", periodId)
+      .order("category_id");
+    if (error) throw error;
+    setAllocations(data as BudgetAllocation[]);
+  }
+
+  async function fetchIncomes(periodId: string) {
+    const { data, error } = await supabase
+      .from("incomes")
+      .select("*")
+      .eq("period_id", periodId)
+      .order("received_at");
+    if (error) throw error;
+    setIncomes(data as Income[]);
+  }
+
+  useEffect(() => {
+    const m = dateRange.start.slice(0, 7) + "-01"; // first of month
+    (async () => {
+      await ensurePeriodForMonth(m);
+    })().catch(console.error);
+  }, [dateRange.start, dateRange.end]);
+
+  useEffect(() => {
+    if (!period?.id) return;
+    fetchAllocations(period.id).catch(console.error);
+    fetchIncomes(period.id).catch(console.error);
+  }, [period?.id]);
+
+  async function setPlanned(categoryId: string, dollars: string) {
+    if (!period) throw new Error("No budget period");
+    const planned_cents = Math.round(parseFloat(dollars || "0") * 100);
+    const { data, error } = await supabase
+      .from("budget_allocations")
+      .upsert(
+        {
+          period_id: period.id,
+          category_id: categoryId,
+          planned_cents,
+        },
+        { onConflict: "period_id,category_id" }
+      )
+      .select();
+    if (error) throw error;
+    await fetchAllocations(period.id);
+  }
+
+  async function addIncome(input: {
+    source: string;
+    date: string;
+    amountDollars: string;
+    accountId?: string;
+  }) {
+    if (!period) throw new Error("No budget period");
+    const amount_cents = Math.round(
+      parseFloat(input.amountDollars || "0") * 100
+    );
+    const { error } = await supabase.from("incomes").insert([
+      {
+        period_id: period.id,
+        source: input.source.trim(),
+        received_at: input.date,
+        amount_cents,
+        account_id: input.accountId ?? null,
+      },
+    ]);
+    if (error) throw error;
+    await fetchIncomes(period.id);
+  }
+
+  const spentByCategory = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const t of transactions) {
+      // your app stores outflows as negative cents; invert for "spent"
+      const spent = t.amountCents < 0 ? -t.amountCents : 0;
+      m.set(t.categoryId, (m.get(t.categoryId) ?? 0) + spent);
+    }
+    return m;
+  }, [transactions]);
+
+  const incomeTotal = incomes.reduce((s, i) => s + i.amount_cents, 0);
+  const plannedTotal = allocations.reduce((s, a) => s + a.planned_cents, 0);
+  const unassigned = incomeTotal - plannedTotal;
 
   const refreshAll = async () => {
     await Promise.all([fetchAccounts(), fetchCategories()]);
@@ -316,8 +446,33 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
       deleteAccount,
       updateCategory,
       deleteCategory,
+      // Add these budget-related values:
+      period,
+      allocations,
+      incomes,
+      addIncome,
+      setPlanned,
+      spentByCategory,
+      incomeTotal,
+      plannedTotal,
+      unassigned,
     }),
-    [accounts, categories, transactions, dateRange, accountById, categoryById]
+    [
+      accounts,
+      categories,
+      transactions,
+      dateRange,
+      accountById,
+      categoryById,
+      // Add these dependencies:
+      period,
+      allocations,
+      incomes,
+      spentByCategory,
+      incomeTotal,
+      plannedTotal,
+      unassigned,
+    ]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
