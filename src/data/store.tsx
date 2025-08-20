@@ -35,6 +35,12 @@ type Store = {
   deleteAccount: (id: string) => Promise<void>;
   updateCategory: (c: EditCategory) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
+  debts: Debt[];
+  addDebt: (d: NewDebt) => Promise<void>;
+  updateDebt: (d: EditDebt) => Promise<void>;
+  deleteDebt: (id: string) => Promise<void>;
+  markDebtAsPaid: (id: string) => Promise<void>;
+  markDebtAsPartiallyPaid: (id: string) => Promise<void>;
 };
 
 type NewAccount = {
@@ -78,15 +84,67 @@ type Income = {
   account_id?: string | null;
 };
 
+export type DebtType = "owed_to_me" | "i_owe";
+export type DebtStatus = "pending" | "partially_paid" | "paid" | "cancelled";
+
+export interface Debt {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  amountCents: number;
+  currency: string;
+  debtType: DebtType;
+  personName: string;
+  companyName?: string;
+  dueDate?: string;
+  status: DebtStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewDebt {
+  title: string;
+  description?: string;
+  amountDollars: string;
+  currency?: string;
+  debtType: DebtType;
+  personName: string;
+  companyName?: string;
+  dueDate?: string;
+}
+
+export interface EditDebt extends NewDebt {
+  id: string;
+  status: DebtStatus;
+}
+
 const mapTxn = (r: any) => ({
   id: r.id,
+  userId: r.user_id, // Add this line
   accountId: r.account_id,
   categoryId: r.category_id,
   amountCents: r.amount_cents,
   currency: r.currency,
-  date: r.date, // 'YYYY-MM-DD'
+  date: r.date,
   merchant: r.merchant ?? undefined,
   notes: r.notes ?? undefined,
+});
+
+const mapDebt = (r: any) => ({
+  id: r.id,
+  userId: r.user_id,
+  title: r.title,
+  description: r.description,
+  amountCents: r.amount_cents, // Use the actual column name from your DB
+  currency: r.currency,
+  debtType: r.debt_type,
+  personName: r.person_name,
+  companyName: r.company_name,
+  dueDate: r.due_date,
+  status: r.status,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
 });
 
 const Ctx = createContext<Store | null>(null);
@@ -111,6 +169,7 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
   const [period, setPeriod] = useState<BudgetPeriod | null>(null);
   const [allocations, setAllocations] = useState<BudgetAllocation[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
+  const [debts, setDebts] = useState<Debt[]>([]);
 
   async function fetchAccounts() {
     const { data, error } = await supabase
@@ -132,14 +191,22 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
 
   async function fetchTransactions() {
     const { start, end } = dateRange;
+
+    // Get the current user ID
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
     const { data, error } = await supabase
       .from("transactions")
       .select(
-        "id, account_id, category_id, amount_cents, currency, date, merchant, notes"
+        "id, user_id, account_id, category_id, amount_cents, currency, date, merchant, notes"
       )
+      .eq("user_id", user.id)
       .gte("date", start)
-      .lte("date", end)
-      .order("date", { ascending: false });
+      .lte("date", end);
+
     if (error) throw error;
     setTx((data ?? []).map(mapTxn));
   }
@@ -184,6 +251,27 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
     setIncomes(data as Income[]);
   }
 
+  async function fetchDebts() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const { data, error } = await supabase
+      .from("debts")
+      .select("*") // Use * temporarily to see all columns
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    console.log("Fetched debts:", data); // Add this to debug
+    if (data && data.length > 0) {
+      console.log("First debt raw data:", data[0]);
+      console.log("Available keys:", Object.keys(data[0]));
+    }
+    setDebts((data ?? []).map(mapDebt));
+  }
+
   useEffect(() => {
     // Create a budget period that covers the entire date range, not just the first day of month
     const startMonth = dateRange.start.slice(0, 7) + "-01";
@@ -204,6 +292,10 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
     fetchAllocations(period.id).catch(console.error);
     fetchIncomes(period.id).catch(console.error);
   }, [period?.id]);
+
+  useEffect(() => {
+    fetchDebts().catch(console.error);
+  }, []);
 
   async function setPlanned(categoryId: string, dollars: string) {
     if (!period) throw new Error("No budget period");
@@ -261,7 +353,7 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
   const unassigned = incomeTotal - plannedTotal;
 
   const refreshAll = async () => {
-    await Promise.all([fetchAccounts(), fetchCategories()]);
+    await Promise.all([fetchAccounts(), fetchCategories(), fetchDebts()]);
     await fetchTransactions();
   };
 
@@ -291,15 +383,17 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
   };
 
   const addTransaction = async (t: NewTxn) => {
-    const uid = (await supabase.auth.getUser()).data.user?.id;
-    if (!uid) throw new Error("Not signed in");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
 
     const amount_cents = Math.round(parseFloat(t.amountDollars || "0") * 100);
     const currency = accountById[t.accountId]?.currency || "CAD";
 
     const { error } = await supabase.from("transactions").insert([
       {
-        user_id: uid,
+        user_id: user.id,
         account_id: t.accountId,
         category_id: t.categoryId,
         amount_cents,
@@ -438,6 +532,116 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
     await fetchTransactions();
   };
 
+  const addDebt = async (d: NewDebt) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const amount_cents = Math.round(parseFloat(d.amountDollars) * 100);
+    const currency = d.currency || "CAD";
+
+    const { error } = await supabase.from("debts").insert([
+      {
+        user_id: user.id,
+        title: d.title.trim(),
+        description: d.description?.trim() || null,
+        amount_cents: amount_cents,
+        currency,
+        debt_type: d.debtType,
+        person_name: d.personName.trim(),
+        company_name: d.companyName?.trim() || null,
+        due_date: d.dueDate || null,
+      },
+    ]);
+
+    if (error) throw error;
+    await fetchDebts();
+  };
+
+  const updateDebt = async (d: EditDebt) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const amount_cents = Math.round(parseFloat(d.amountDollars) * 100);
+    const currency = d.currency || "CAD";
+
+    // Use upsert with onConflict to avoid PATCH requests
+    const { error } = await supabase.from("debts").upsert(
+      {
+        id: d.id,
+        user_id: user.id,
+        title: d.title.trim(),
+        description: d.description?.trim() || null,
+        amount_cents: amount_cents,
+        currency,
+        debt_type: d.debtType,
+        person_name: d.personName.trim(),
+        company_name: d.companyName?.trim() || null,
+        due_date: d.dueDate || null,
+        status: d.status,
+      },
+      { onConflict: "id" }
+    );
+
+    if (error) throw error;
+    await fetchDebts();
+  };
+
+  const deleteDebt = async (id: string) => {
+    const { error } = await supabase.from("debts").delete().eq("id", id);
+    if (error) throw error;
+    await fetchDebts();
+  };
+
+  const markDebtAsPaid = async (id: string) => {
+    try {
+      console.log("Updating debt status to paid for ID:", id);
+
+      // Check if user is authenticated
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      console.log("User authenticated:", user.id);
+
+      // Use a simple update operation with just the status change
+      const { data, error } = await supabase
+        .from("debts")
+        .update({
+          status: "paid",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select();
+
+      if (error) {
+        console.error("Error updating debt status:", error);
+        throw error;
+      }
+
+      console.log("Update result:", data);
+      console.log("Debt status updated successfully");
+      await fetchDebts();
+    } catch (error) {
+      console.error("Error in markDebtAsPaid:", error);
+      throw error;
+    }
+  };
+
+  const markDebtAsPartiallyPaid = async (id: string) => {
+    const { error } = await supabase
+      .from("debts")
+      .update({ status: "partially_paid" })
+      .eq("id", id);
+    if (error) throw error;
+    await fetchDebts();
+  };
+
   const value = useMemo(
     () => ({
       accounts,
@@ -468,6 +672,12 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
       incomeTotal,
       plannedTotal,
       unassigned,
+      debts,
+      addDebt,
+      updateDebt,
+      deleteDebt,
+      markDebtAsPaid,
+      markDebtAsPartiallyPaid,
     }),
     [
       accounts,
@@ -484,6 +694,7 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
       incomeTotal,
       plannedTotal,
       unassigned,
+      debts,
     ]
   );
 

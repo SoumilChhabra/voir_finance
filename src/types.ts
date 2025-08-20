@@ -16,6 +16,7 @@ export interface Category {
 
 export interface Transaction {
   id: string;
+  userId: string; // Add this line
   accountId: string;
   categoryId: string;
   amountCents: number; // store money in cents
@@ -48,4 +49,39 @@ export interface Income {
   received_at: string;
   amount_cents: number;
   account_id?: string | null;
+}
+
+export type DebtType = "owed_to_me" | "i_owe";
+export type DebtStatus = "pending" | "partially_paid" | "paid" | "cancelled";
+
+export interface Debt {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  amountCents: number;
+  currency: string;
+  debtType: DebtType;
+  personName: string;
+  companyName?: string;
+  dueDate?: string;
+  status: DebtStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewDebt {
+  title: string;
+  description?: string;
+  amountDollars: string;
+  currency?: string;
+  debtType: DebtType;
+  personName: string;
+  companyName?: string;
+  dueDate?: string;
+}
+
+export interface EditDebt extends NewDebt {
+  id: string;
+  status: DebtStatus;
 }

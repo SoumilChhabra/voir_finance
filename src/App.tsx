@@ -18,6 +18,7 @@ import {
   card,
   pricetags,
   personCircleOutline,
+  receipt,
 } from "ionicons/icons";
 import { StoreProvider } from "./data/store";
 import AuthGate from "./auth/AuthGate";
@@ -42,6 +43,7 @@ import Hero from "./components/Hero";
 import Profile from "./pages/Profile";
 import Budget from "./pages/Budget";
 import { wallet } from "ionicons/icons";
+import Debts from "./pages/Debts";
 
 import "@ionic/react/css/core.css";
 import "./theme/variables.css";
@@ -141,6 +143,7 @@ export default function App() {
                 <Route path="/tabs/accounts" component={Accounts} exact />
                 <Route path="/tabs/categories" component={Categories} exact />
                 <Route path="/tabs/profile" component={Profile} exact />
+                <Route path="/tabs/debts" component={Debts} exact />
 
                 {/* Modal/secondary pages */}
                 <Route
@@ -187,12 +190,16 @@ export default function App() {
                   <IonLabel>Budget</IonLabel>
                 </IonTabButton>
 
+                <IonTabButton tab="debts" href="/tabs/debts">
+                  <IonIcon icon={receipt} />
+                  <IonLabel>Debts</IonLabel>
+                </IonTabButton>
+
                 <IonTabButton tab="profile" href="/tabs/profile">
                   <IonIcon icon={personCircleOutline} />
                   <IonLabel>Profile</IonLabel>
                 </IonTabButton>
               </IonTabBar>
-
               {/* Floating + button visible on tab pages */}
               <IonFab vertical="bottom" horizontal="end" slot="fixed">
                 <IonFabButton routerLink="/add">
