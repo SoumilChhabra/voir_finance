@@ -11,7 +11,7 @@ import {
   IonDatetimeButton,
 } from "@ionic/react";
 import { calendar, close } from "ionicons/icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "../data/store";
 import {
   formatRangeLabel,
@@ -28,6 +28,12 @@ export default function DateRangeButton() {
   const [start, setStart] = useState(dateRange.start);
   const [end, setEnd] = useState(dateRange.end);
 
+  // Update local state when store dateRange changes
+  useEffect(() => {
+    setStart(dateRange.start);
+    setEnd(dateRange.end);
+  }, [dateRange.start, dateRange.end]);
+
   const apply = () => {
     setDateRange({ start, end });
     setOpen(false);
@@ -40,11 +46,14 @@ export default function DateRangeButton() {
       setEnd(t);
     } else if (p === "7d") {
       const e = todayISO();
-      setStart(addDaysISO(e, -6));
+      const s = addDaysISO(e, -6);
+      setStart(s);
       setEnd(e);
     } else {
-      setStart(startOfMonthISO());
-      setEnd(endOfMonthISO());
+      const s = startOfMonthISO();
+      const e = endOfMonthISO();
+      setStart(s);
+      setEnd(e);
     }
   };
 

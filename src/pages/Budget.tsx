@@ -9,6 +9,11 @@ import {
   IonButton,
   IonIcon,
   IonChip,
+  IonModal,
+  IonDatetimeButton,
+  IonDatetime,
+  IonSelect,
+  IonSelectOption,
 } from "@ionic/react";
 import { add } from "ionicons/icons";
 import Shell from "../components/Shell";
@@ -39,6 +44,8 @@ export default function Budget() {
     accountId: "",
   });
 
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+
   const catById = useMemo<Record<string, Category>>(
     () =>
       Object.fromEntries(
@@ -47,15 +54,8 @@ export default function Budget() {
     [categories]
   );
 
-  // spent per category (we can recompute here or read from store if you exposed it)
-  const spentByCategory = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const t of transactions) {
-      const spent = t.amountCents < 0 ? -t.amountCents : 0;
-      m.set(t.categoryId, (m.get(t.categoryId) ?? 0) + spent);
-    }
-    return m;
-  }, [transactions]);
+  // Use the spentByCategory from the store instead of recalculating here
+  const { spentByCategory } = useStore() as any;
 
   const incomeTotal = incomes.reduce(
     (s: number, i: any) => s + i.amount_cents,
@@ -105,6 +105,7 @@ export default function Budget() {
       amount: "",
       accountId: "",
     });
+    setShowIncomeModal(false);
   };
 
   return (
@@ -116,46 +117,10 @@ export default function Budget() {
           actions={
             <>
               <DateRangeButton />
-              {/* Quick add income (compact inline) */}
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <IonInput
-                  placeholder="Income source"
-                  value={incomeForm.source}
-                  onIonInput={(e) =>
-                    setIncomeForm({
-                      ...incomeForm,
-                      source: String(e.detail.value ?? ""),
-                    })
-                  }
-                  style={{ minWidth: 140 }}
-                />
-                <IonInput
-                  type="date"
-                  value={incomeForm.date}
-                  onIonInput={(e) =>
-                    setIncomeForm({
-                      ...incomeForm,
-                      date: String(e.detail.value ?? ""),
-                    })
-                  }
-                />
-                <IonInput
-                  placeholder="Amount"
-                  inputmode="decimal"
-                  value={incomeForm.amount}
-                  onIonInput={(e) =>
-                    setIncomeForm({
-                      ...incomeForm,
-                      amount: String(e.detail.value ?? ""),
-                    })
-                  }
-                  style={{ width: 120 }}
-                />
-                <IonButton onClick={onSaveIncome}>
-                  <IonIcon icon={add} slot="start" />
-                  Add Income
-                </IonButton>
-              </div>
+              <IonButton onClick={() => setShowIncomeModal(true)}>
+                <IonIcon icon={add} slot="start" />
+                Add Income
+              </IonButton>
             </>
           }
         >
@@ -176,7 +141,7 @@ export default function Budget() {
           </div>
 
           {/* Instructions */}
-          <div
+          {/* <div
             style={{
               padding: "16px",
               margin: "16px 0",
@@ -202,7 +167,7 @@ export default function Budget() {
                 Categories with no budget show "No Budget" - click to allocate
               </li>
             </ol>
-          </div>
+          </div> */}
 
           {/* Unassigned amount alert */}
           {unassigned > 0 && (
@@ -290,9 +255,6 @@ export default function Budget() {
 
           {/* Category table */}
           <div style={{ margin: "16px 0" }}>
-            <h4 style={{ margin: "0 0 8px 0", color: "#ffffff" }}>
-              Budget Categories
-            </h4>
             <div
               style={{
                 display: "grid",
@@ -309,8 +271,8 @@ export default function Budget() {
               }}
             >
               <span>Category & Progress</span>
-              <span style={{ textAlign: "center" }}>Remaining</span>
               <span style={{ textAlign: "center" }}>Planned</span>
+              <span style={{ textAlign: "center" }}>Remaining</span>
             </div>
           </div>
           <IonList inset style={{ marginTop: 0 }}>
@@ -564,6 +526,251 @@ export default function Budget() {
             </div>
           </div>
         </Shell>
+
+        {/* Income Modal */}
+        <IonModal
+          isOpen={showIncomeModal}
+          onDidDismiss={() => setShowIncomeModal(false)}
+          breakpoints={[0, 1]}
+          initialBreakpoint={1}
+          style={{
+            "--background": "transparent",
+            "--backdrop-opacity": "0.8",
+          }}
+        >
+          <IonContent
+            className="ion-padding"
+            style={{
+              "--background": "transparent",
+            }}
+          >
+            <div
+              style={{
+                padding: "24px 20px",
+                maxWidth: "480px",
+                margin: "0 auto",
+                background: "rgba(0, 0, 0, 0.85)",
+                borderRadius: "16px",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "24px",
+                }}
+              >
+                <h2
+                  style={{
+                    margin: 0,
+                    color: "#ffffff",
+                    fontSize: "24px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Add Income
+                </h2>
+                <IonButton
+                  fill="clear"
+                  onClick={() => setShowIncomeModal(false)}
+                  style={{
+                    color: "rgba(255, 255, 255, 0.6)",
+                    fontSize: "20px",
+                    minWidth: "40px",
+                    height: "40px",
+                  }}
+                >
+                  ✕
+                </IonButton>
+              </div>
+
+              <IonList
+                inset={false}
+                style={{
+                  background: "transparent",
+                  margin: "0 0 20px 0",
+                }}
+              >
+                <IonItem
+                  style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    borderRadius: "8px",
+                    marginBottom: "16px",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                  }}
+                >
+                  <IonLabel
+                    position="stacked"
+                    style={{ color: "rgba(255, 255, 255, 0.9)" }}
+                  >
+                    Income Source
+                  </IonLabel>
+                  <IonInput
+                    placeholder="e.g., Salary, Freelance"
+                    value={incomeForm.source}
+                    onIonInput={(e) =>
+                      setIncomeForm({
+                        ...incomeForm,
+                        source: String(e.detail.value ?? ""),
+                      })
+                    }
+                    style={{
+                      color: "#ffffff",
+                      "--placeholder-color": "rgba(255, 255, 255, 0.4)",
+                    }}
+                  />
+                </IonItem>
+
+                <IonItem
+                  style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    borderRadius: "8px",
+                    marginBottom: "16px",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                  }}
+                >
+                  <IonLabel
+                    position="stacked"
+                    style={{ color: "rgba(255, 255, 255, 0.9)" }}
+                  >
+                    Date Received
+                  </IonLabel>
+                  <div slot="end">
+                    <IonDatetimeButton
+                      datetime="income-date"
+                      className="dt-trigger"
+                    />
+                  </div>
+                </IonItem>
+
+                <IonModal keepContentsMounted className="dt-pop">
+                  <IonDatetime
+                    id="income-date"
+                    presentation="date"
+                    value={incomeForm.date}
+                    onIonChange={(e) =>
+                      setIncomeForm({
+                        ...incomeForm,
+                        date: String(e.detail.value).slice(0, 10),
+                      })
+                    }
+                  />
+                </IonModal>
+
+                <IonItem
+                  style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    borderRadius: "8px",
+                    marginBottom: "16px",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                  }}
+                >
+                  <IonLabel
+                    position="stacked"
+                    style={{ color: "rgba(255, 255, 255, 0.9)" }}
+                  >
+                    Amount
+                  </IonLabel>
+                  <IonInput
+                    type="number"
+                    inputmode="decimal"
+                    placeholder="0.00"
+                    value={incomeForm.amount}
+                    onIonInput={(e) =>
+                      setIncomeForm({
+                        ...incomeForm,
+                        amount: String(e.detail.value ?? ""),
+                      })
+                    }
+                    style={{
+                      color: "#ffffff",
+                      "--placeholder-color": "rgba(255, 255, 255, 0.4)",
+                    }}
+                  />
+                </IonItem>
+
+                <IonItem
+                  style={{
+                    background: "rgba(255, 255, 255, 0.04)",
+                    borderRadius: "8px",
+                    marginBottom: "16px",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                  }}
+                >
+                  <IonLabel
+                    position="stacked"
+                    style={{ color: "rgba(255, 255, 255, 0.9)" }}
+                  >
+                    Account (Optional)
+                  </IonLabel>
+                  <IonSelect
+                    interface="popover"
+                    value={incomeForm.accountId}
+                    onIonChange={(e) =>
+                      setIncomeForm({
+                        ...incomeForm,
+                        accountId: e.detail.value,
+                      })
+                    }
+                    style={{
+                      color: "#ffffff",
+                    }}
+                  >
+                    <IonSelectOption value="">
+                      No specific account
+                    </IonSelectOption>
+                    {accounts.map((a: any) => (
+                      <IonSelectOption key={a.id} value={a.id}>
+                        {a.name}
+                      </IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </IonItem>
+              </IonList>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <IonButton
+                  fill="clear"
+                  onClick={() => setShowIncomeModal(false)}
+                  style={{
+                    color: "rgba(255, 255, 255, 0.7)",
+                    fontSize: "16px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Cancel
+                </IonButton>
+                <IonButton
+                  onClick={onSaveIncome}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.1)",
+                    color: "#ffffff",
+                    borderRadius: "8px",
+                    padding: "12px 20px",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    "--background": "rgba(255, 255, 255, 0.1)",
+                    "--background-activated": "rgba(255, 255, 255, 0.15)",
+                    "--background-hover": "rgba(255, 255, 255, 0.12)",
+                    "--color": "#ffffff",
+                    "--color-activated": "#ffffff",
+                    "--color-hover": "#ffffff",
+                  }}
+                >
+                  <IonIcon icon={add} slot="start" />
+                  Add Income
+                </IonButton>
+              </div>
+            </div>
+          </IonContent>
+        </IonModal>
       </IonContent>
     </IonPage>
   );

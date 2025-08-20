@@ -95,7 +95,7 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTx] = useState<Transaction[]>([]);
-  const [dateRange, setDateRange] = useState<DateRange>({
+  const [dateRange, setDateRangeState] = useState<DateRange>({
     start: startOfMonthISO(),
     end: endOfMonthISO(),
   });
@@ -185,7 +185,15 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
   }
 
   useEffect(() => {
-    const m = dateRange.start.slice(0, 7) + "-01"; // first of month
+    // Create a budget period that covers the entire date range, not just the first day of month
+    const startMonth = dateRange.start.slice(0, 7) + "-01";
+    const endMonth = dateRange.end.slice(0, 7) + "-01";
+
+    // If the date range spans multiple months, we need to handle this differently
+    // For now, let's use the start month as the budget period
+    // TODO: Consider creating budget periods for each month in the range
+    const m = startMonth;
+
     (async () => {
       await ensurePeriodForMonth(m);
     })().catch(console.error);
@@ -241,8 +249,8 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
   const spentByCategory = useMemo(() => {
     const m = new Map<string, number>();
     for (const t of transactions) {
-      // your app stores outflows as negative cents; invert for "spent"
-      const spent = t.amountCents < 0 ? -t.amountCents : 0;
+      // The app stores outflows as positive amounts, so treat positive as spending
+      const spent = t.amountCents > 0 ? t.amountCents : 0;
       m.set(t.categoryId, (m.get(t.categoryId) ?? 0) + spent);
     }
     return m;
@@ -268,14 +276,18 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
   const setPreset = (p: "today" | "7d" | "month") => {
     if (p === "today") {
       const t = todayISO();
-      setDateRange({ start: t, end: t });
+      setDateRangeState({ start: t, end: t });
     } else if (p === "7d") {
       const end = todayISO();
       const start = addDaysISO(end, -6);
-      setDateRange({ start, end });
+      setDateRangeState({ start, end });
     } else {
-      setDateRange({ start: startOfMonthISO(), end: endOfMonthISO() });
+      setDateRangeState({ start: startOfMonthISO(), end: endOfMonthISO() });
     }
+  };
+
+  const setDateRange = (r: DateRange) => {
+    setDateRangeState(r);
   };
 
   const addTransaction = async (t: NewTxn) => {

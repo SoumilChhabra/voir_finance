@@ -28,6 +28,7 @@ import { useLocation, useHistory } from "react-router";
 
 export default function Categories() {
   const { categories, transactions, deleteCategory } = useStore();
+
   const totals = new Map<string, number>();
   for (const t of transactions)
     totals.set(t.categoryId, (totals.get(t.categoryId) ?? 0) + t.amountCents);

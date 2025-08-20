@@ -24,3 +24,28 @@ export interface Transaction {
   merchant?: string;
   notes?: string;
 }
+
+export interface BudgetPeriod {
+  id: string;
+  month: string;
+  currency: string;
+}
+
+export interface BudgetAllocation {
+  id: string;
+  period_id: string;
+  category_id: string;
+  planned_cents: number;
+  rollover: boolean;
+  is_sinking: boolean;
+  carryover_cents: number;
+}
+
+export interface Income {
+  id: string;
+  period_id: string;
+  source: string;
+  received_at: string;
+  amount_cents: number;
+  account_id?: string | null;
+}
