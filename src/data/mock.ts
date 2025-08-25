@@ -21,6 +21,7 @@ export const categories: Category[] = [
 export const transactions: Transaction[] = [
   {
     id: "t1",
+    userId: "user1",
     accountId: "acc_visa",
     categoryId: "cat_food",
     amountCents: 1425,
@@ -30,6 +31,7 @@ export const transactions: Transaction[] = [
   },
   {
     id: "t2",
+    userId: "user1",
     accountId: "acc_cheq",
     categoryId: "cat_transport",
     amountCents: 350,
@@ -39,6 +41,7 @@ export const transactions: Transaction[] = [
   },
   {
     id: "t3",
+    userId: "user1",
     accountId: "acc_visa",
     categoryId: "cat_shopping",
     amountCents: 4999,
@@ -48,6 +51,7 @@ export const transactions: Transaction[] = [
   },
   {
     id: "t4",
+    userId: "user1",
     accountId: "acc_cash",
     categoryId: "cat_food",
     amountCents: 975,
