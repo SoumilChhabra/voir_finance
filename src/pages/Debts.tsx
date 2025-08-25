@@ -15,20 +15,10 @@ import {
   IonSelect,
   IonSelectOption,
   IonTextarea,
-  IonDatetime,
   IonAlert,
   IonToast,
-  IonDatetimeButton,
 } from "@ionic/react";
-import {
-  add,
-  checkmark,
-  close,
-  person,
-  business,
-  save,
-  calendar,
-} from "ionicons/icons";
+import { add, checkmark, close, person, business, save } from "ionicons/icons";
 import { useState, useRef } from "react";
 import Shell from "../components/Shell";
 import { useStore } from "../data/store";
@@ -40,7 +30,6 @@ export default function Debts() {
   const { debts, addDebt, updateDebt, deleteDebt, markDebtAsPaid } = useStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDebt, setEditingDebt] = useState<any>(null);
-  const [dueDate, setDueDate] = useState<string>("");
   const [presentAlert] = useIonAlert();
   const [toast] = useIonToast();
 
@@ -50,15 +39,14 @@ export default function Debts() {
   const handleSubmit = async (formData: any) => {
     try {
       if (editingDebt) {
-        await updateDebt({ ...formData, dueDate, id: editingDebt.id });
+        await updateDebt({ ...formData, id: editingDebt.id });
         toast({ message: "Debt updated", duration: 1200 });
       } else {
-        await addDebt({ ...formData, dueDate });
+        await addDebt(formData);
         toast({ message: "Debt added", duration: 1200 });
       }
       setShowAddModal(false);
       setEditingDebt(null);
-      setDueDate("");
     } catch (e: any) {
       toast({ message: e.message, color: "danger", duration: 2000 });
     }
@@ -81,20 +69,17 @@ export default function Debts() {
 
   const openAddModal = () => {
     setEditingDebt(null);
-    setDueDate("");
     setShowAddModal(true);
   };
 
   const openEditModal = (debt: any) => {
     setEditingDebt(debt);
-    setDueDate(debt.dueDate || "");
     setShowAddModal(true);
   };
 
   const closeModal = () => {
     setShowAddModal(false);
     setEditingDebt(null);
-    setDueDate("");
   };
 
   return (
@@ -141,13 +126,6 @@ export default function Debts() {
                           </span>
                         )}
                       </p>
-
-                      {debt.dueDate && (
-                        <p className="debt-due-date">
-                          <IonIcon icon={calendar} />
-                          Due: {formatDateLocal(debt.dueDate)}
-                        </p>
-                      )}
 
                       {debt.description && (
                         <p className="debt-description">{debt.description}</p>
@@ -250,13 +228,6 @@ export default function Debts() {
                           )}
                         </p>
 
-                        {debt.dueDate && (
-                          <p className="debt-due-date">
-                            <IonIcon icon={calendar} />
-                            Due: {formatDateLocal(debt.dueDate)}
-                          </p>
-                        )}
-
                         {debt.description && (
                           <p className="debt-description">{debt.description}</p>
                         )}
@@ -329,7 +300,6 @@ export default function Debts() {
                   debtType: formData.get("debtType"),
                   personName: formData.get("personName"),
                   companyName: formData.get("companyName"),
-                  dueDate: formData.get("dueDate"),
                 });
               }}
             >
@@ -399,17 +369,6 @@ export default function Debts() {
                   </IonItem>
 
                   <IonItem>
-                    <IonLabel position="stacked">Due Date (optional)</IonLabel>
-                    <div slot="end">
-                      <IonDatetimeButton
-                        datetime="debt-due-date"
-                        className="dt-trigger"
-                      />
-                    </div>
-                    <input type="hidden" name="dueDate" value={dueDate} />
-                  </IonItem>
-
-                  <IonItem>
                     <IonLabel position="stacked">
                       Description (optional)
                     </IonLabel>
@@ -422,17 +381,6 @@ export default function Debts() {
                   </IonItem>
                 </IonList>
               </div>
-
-              <IonModal keepContentsMounted className="dt-pop">
-                <IonDatetime
-                  id="debt-due-date"
-                  presentation="date"
-                  value={dueDate}
-                  onIonChange={(e) => {
-                    setDueDate(String(e.detail.value).slice(0, 10));
-                  }}
-                />
-              </IonModal>
 
               <div className="form-actions">
                 <IonButton fill="outline" onClick={closeModal}>

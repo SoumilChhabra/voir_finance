@@ -3943,11 +3943,6 @@ body.no-hero ion-app {
   font-size: var(--text-xs);
 }
 
-.debt-due-date {
-  color: var(--brand) !important;
-  font-weight: var(--w-med);
-}
-
 .debt-description {
   font-style: italic;
   color: var(--muted) !important;
