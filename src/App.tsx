@@ -19,6 +19,7 @@ import {
   pricetags,
   personCircleOutline,
   receipt,
+  settings,
 } from "ionicons/icons";
 import { StoreProvider } from "./data/store";
 import AuthGate from "./auth/AuthGate";
@@ -30,6 +31,7 @@ import { supabase } from "./lib/supabase";
 import AuthCallback from "./auth/AuthCallback";
 
 import All from "./pages/All";
+import Manage from "./pages/Manage";
 import Accounts from "./pages/Accounts";
 import Categories from "./pages/Categories";
 import AddAccount from "./pages/AddAccount";
@@ -56,6 +58,7 @@ function TitleUpdater() {
   useEffect(() => {
     const map: Record<string, string> = {
       "/tabs/all": "All",
+      "/tabs/manage": "Manage",
       "/tabs/accounts": "Accounts",
       "/tabs/categories": "Categories",
       "/tabs/profile": "Profile",
@@ -140,6 +143,7 @@ export default function App() {
               <IonRouterOutlet>
                 {/* Tab roots (RRv5: component/exact) */}
                 <Route path="/tabs/all" component={All} exact />
+                <Route path="/tabs/manage" component={Manage} exact />
                 <Route path="/tabs/accounts" component={Accounts} exact />
                 <Route path="/tabs/categories" component={Categories} exact />
                 <Route path="/tabs/profile" component={Profile} exact />
@@ -175,14 +179,9 @@ export default function App() {
                   <IonLabel>All</IonLabel>
                 </IonTabButton>
 
-                <IonTabButton tab="accounts" href="/tabs/accounts">
-                  <IonIcon icon={card} />
-                  <IonLabel>Accounts</IonLabel>
-                </IonTabButton>
-
-                <IonTabButton tab="categories" href="/tabs/categories">
-                  <IonIcon icon={pricetags} />
-                  <IonLabel>Categories</IonLabel>
+                <IonTabButton tab="manage" href="/tabs/manage">
+                  <IonIcon icon={settings} />
+                  <IonLabel>Manage</IonLabel>
                 </IonTabButton>
 
                 <IonTabButton tab="budget" href="/tabs/budget">
@@ -194,18 +193,7 @@ export default function App() {
                   <IonIcon icon={receipt} />
                   <IonLabel>Debts</IonLabel>
                 </IonTabButton>
-
-                <IonTabButton tab="profile" href="/tabs/profile">
-                  <IonIcon icon={personCircleOutline} />
-                  <IonLabel>Profile</IonLabel>
-                </IonTabButton>
               </IonTabBar>
-              {/* Floating + button visible on tab pages */}
-              <IonFab vertical="bottom" horizontal="end" slot="fixed">
-                <IonFabButton routerLink="/add">
-                  <IonIcon icon={add} />
-                </IonFabButton>
-              </IonFab>
             </IonTabs>
           </IonReactRouter>
         </StoreProvider>

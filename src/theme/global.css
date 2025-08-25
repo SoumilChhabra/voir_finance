@@ -259,6 +259,25 @@ ion-tab-bar {
     rgba(10, 14, 22, 0.58)
   );
 }
+
+.panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-button {
+  --color: var(--text);
+  --background: transparent;
+  --border-radius: 8px;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  margin-right: 4px;
+}
+
+.back-button:hover {
+  --background: rgba(255, 255, 255, 0.04);
+}
 .panel-header h2 {
   margin: 0;
   font-family: var(--font-ui);
@@ -4124,4 +4143,65 @@ body.no-hero ion-app {
 .action-btn:active {
   transform: translateY(0);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* =======================
+   Manage Page Styling
+   ======================= */
+.manage-item {
+  --border-radius: 12px;
+  --background: rgba(255, 255, 255, 0.02);
+  --border-color: var(--border);
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.manage-item:hover {
+  --background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.manage-item:last-child {
+  margin-bottom: 0;
+}
+
+.manage-item ion-label h3 {
+  font-weight: var(--w-sb);
+  font-size: var(--text-lg);
+  margin: 0 0 4px 0;
+  color: var(--text);
+}
+
+.manage-item ion-label p {
+  font-size: var(--text-sm);
+  margin: 0;
+  color: var(--muted);
+  font-weight: var(--w-reg);
+}
+
+.manage-item ion-icon[slot="start"] {
+  font-size: 24px;
+  margin-right: 8px;
+}
+
+.manage-item ion-icon[slot="end"] {
+  font-size: 20px;
+  opacity: 0.8;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .manage-item {
+    --padding-start: 12px;
+    --padding-end: 12px;
+  }
+
+  .manage-item ion-label h3 {
+    font-size: var(--text-base);
+  }
+
+  .manage-item ion-label p {
+    font-size: var(--text-xs);
+  }
 }

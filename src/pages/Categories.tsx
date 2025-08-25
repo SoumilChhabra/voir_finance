@@ -109,6 +109,8 @@ export default function Categories() {
         <Shell
           title="Categories"
           className="compact-header"
+          backButton={true}
+          backTo="/tabs/manage"
           actions={
             <div className="panel-actions-dropdown">
               <DateRangeButton />

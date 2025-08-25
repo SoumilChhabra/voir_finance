@@ -50,7 +50,7 @@ export default function Profile() {
   return (
     <IonPage>
       <IonContent fullscreen scrollY={false}>
-        <Shell title="Profile">
+        <Shell title="Profile" backButton={true} backTo="/tabs/manage">
           <IonList inset>
             <IonItem>
               <IonLabel position="stacked">Email</IonLabel>

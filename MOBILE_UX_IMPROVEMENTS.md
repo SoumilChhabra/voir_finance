@@ -47,6 +47,13 @@ This document outlines the comprehensive mobile UX improvements implemented in t
 - **Screen reader support**: Proper ARIA and semantic markup support
 - **Reduced motion**: Respects accessibility preferences
 
+### 7. Optimized Tab Structure for Mobile
+
+- **Reduced from 6 to 5 tabs**: Better mobile space utilization
+- **Combined Accounts & Categories**: Single "Manage" tab with segmented control
+- **Improved tab visibility**: All tabs now visible on mobile devices
+- **Smart FAB routing**: Add button routes to correct section based on active tab
+
 ## 🎨 Visual Enhancements
 
 ### Enhanced Buttons
@@ -158,6 +165,28 @@ ion-item:hover::before {
   will-change: transform;
 }
 ```
+
+### Manage Page with Segmented Control
+
+The new Manage page combines Accounts and Categories functionality using Ionic's segmented control:
+
+```tsx
+<IonSegment value={selectedSegment} onIonChange={handleSegmentChange}>
+  <IonSegmentButton value="accounts">
+    <IonLabel>Accounts</IonLabel>
+  </IonSegmentButton>
+  <IonSegmentButton value="categories">
+    <IonLabel>Categories</IonLabel>
+  </IonSegmentButton>
+</IonSegment>
+```
+
+**Key Features:**
+
+- **Smart FAB routing**: Add button automatically routes to correct section
+- **Smooth transitions**: Animated segment switching
+- **Mobile-optimized**: Touch-friendly controls with proper spacing
+- **Unified interface**: Single tab for related management functions
 
 ## 🎭 Animation System
 
