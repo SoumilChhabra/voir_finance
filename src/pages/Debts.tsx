@@ -11,10 +11,6 @@ import {
   IonFab,
   IonFabButton,
   IonModal,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonButtons,
   IonInput,
   IonSelect,
   IonSelectOption,
@@ -81,6 +77,12 @@ export default function Debts() {
         },
       ],
     });
+  };
+
+  const openAddModal = () => {
+    setEditingDebt(null);
+    setDueDate("");
+    setShowAddModal(true);
   };
 
   const openEditModal = (debt: any) => {
@@ -212,7 +214,7 @@ export default function Debts() {
                 <IonItem lines="full" className="debt-header">
                   <IonLabel>
                     <h2>Paid</h2>
-                    <p>{paidDebts.length} completed</p>
+                    <p>{paidDebts.length} completed debts</p>
                   </IonLabel>
                 </IonItem>
 
@@ -222,31 +224,69 @@ export default function Debts() {
                       <div className="debt-title">
                         <h2>{debt.title}</h2>
                         <div className="debt-type-badge">
-                          <IonChip color="success">Paid</IonChip>
+                          <IonChip
+                            color={
+                              debt.debtType === "owed_to_me"
+                                ? "success"
+                                : "warning"
+                            }
+                          >
+                            {debt.debtType === "owed_to_me"
+                              ? "Owed to me"
+                              : "I owe"}
+                          </IonChip>
                         </div>
                       </div>
 
                       <div className="debt-details">
                         <p className="debt-person">
                           <IonIcon icon={person} />
-                          {debt.debtType === "owed_to_me"
-                            ? "Was owed to me"
-                            : "Was owed"}{" "}
-                          by {debt.personName}
+                          {debt.personName}
+                          {debt.companyName && (
+                            <span className="debt-company">
+                              <IonIcon icon={business} />
+                              {debt.companyName}
+                            </span>
+                          )}
                         </p>
 
-                        {debt.companyName && (
-                          <p className="debt-company">
-                            <IonIcon icon={business} />
-                            {debt.companyName}
+                        {debt.dueDate && (
+                          <p className="debt-due-date">
+                            <IonIcon icon={calendar} />
+                            Due: {formatDateLocal(debt.dueDate)}
                           </p>
+                        )}
+
+                        {debt.description && (
+                          <p className="debt-description">{debt.description}</p>
                         )}
                       </div>
                     </div>
 
                     <div slot="end" className="debt-actions-compact">
-                      <div className="debt-amount paid">
+                      <div className="debt-amount">
                         {formatCurrency(debt.amountCents, debt.currency)}
+                      </div>
+
+                      <div className="debt-buttons-compact">
+                        <IonButton
+                          fill="clear"
+                          size="small"
+                          onClick={() => openEditModal(debt)}
+                          className="action-btn-compact"
+                        >
+                          Edit
+                        </IonButton>
+
+                        <IonButton
+                          fill="clear"
+                          size="small"
+                          color="danger"
+                          onClick={() => confirmDelete(debt.id)}
+                          className="action-btn-compact"
+                        >
+                          Delete
+                        </IonButton>
                       </div>
                     </div>
                   </IonItem>
@@ -255,7 +295,7 @@ export default function Debts() {
             )}
 
             <IonFab slot="fixed" vertical="bottom" horizontal="end">
-              <IonFabButton onClick={() => openEditModal({})}>
+              <IonFabButton onClick={openAddModal}>
                 <IonIcon icon={add} />
               </IonFabButton>
             </IonFab>
@@ -266,28 +306,18 @@ export default function Debts() {
           isOpen={showAddModal}
           key={editingDebt?.id || "new"}
           onDidDismiss={closeModal}
-          onWillPresent={() => {
-            // Ensure proper focus management when modal opens
-            setTimeout(() => {
-              const firstInput = document.querySelector("ion-modal ion-input");
-              if (firstInput) {
-                (firstInput as any).setFocus();
-              }
-            }, 100);
-          }}
+          className="dialog-modal"
+          backdropDismiss
         >
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle>{editingDebt ? "Edit Debt" : "Add New Debt"}</IonTitle>
-              <IonButtons slot="end">
-                <IonButton onClick={closeModal}>
-                  <IonIcon icon={close} />
-                </IonButton>
-              </IonButtons>
-            </IonToolbar>
-          </IonHeader>
-
-          <IonContent className="ion-padding">
+          <Shell
+            title={editingDebt ? "Edit Debt" : "Add New Debt"}
+            className="dialog"
+            actions={
+              <IonButton fill="outline" onClick={closeModal}>
+                <IonIcon icon={close} slot="start" /> Close
+              </IonButton>
+            }
+          >
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -303,89 +333,95 @@ export default function Debts() {
                 });
               }}
             >
-              <IonList inset>
-                <IonItem>
-                  <IonLabel position="stacked">Title</IonLabel>
-                  <IonInput
-                    name="title"
-                    placeholder="e.g., Dinner with friends"
-                    value={editingDebt?.title || ""}
-                    required
-                  />
-                </IonItem>
-
-                <IonItem>
-                  <IonLabel position="stacked">Type</IonLabel>
-                  <IonSelect
-                    name="debtType"
-                    interface="popover"
-                    interfaceOptions={{ cssClass: "select-pop" }}
-                    value={editingDebt?.debtType || "i_owe"}
-                    required
-                  >
-                    <IonSelectOption value="i_owe">I owe money</IonSelectOption>
-                    <IonSelectOption value="owed_to_me">
-                      Someone owes me
-                    </IonSelectOption>
-                  </IonSelect>
-                </IonItem>
-
-                <IonItem>
-                  <IonLabel position="stacked">Person Name</IonLabel>
-                  <IonInput
-                    name="personName"
-                    placeholder="e.g., John Doe"
-                    value={editingDebt?.personName || ""}
-                    required
-                  />
-                </IonItem>
-
-                <IonItem>
-                  <IonLabel position="stacked">Company (optional)</IonLabel>
-                  <IonInput
-                    name="companyName"
-                    placeholder="e.g., Company Inc."
-                    value={editingDebt?.companyName || ""}
-                  />
-                </IonItem>
-
-                <IonItem>
-                  <IonLabel position="stacked">Amount ($)</IonLabel>
-                  <IonInput
-                    name="amount"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={
-                      editingDebt
-                        ? (editingDebt.amountCents / 100).toFixed(2)
-                        : ""
-                    }
-                    required
-                  />
-                </IonItem>
-
-                <IonItem>
-                  <IonLabel position="stacked">Due Date (optional)</IonLabel>
-                  <div slot="end">
-                    <IonDatetimeButton
-                      datetime="debt-due-date"
-                      className="dt-trigger"
+              <div className="form-content">
+                <IonList inset>
+                  <IonItem>
+                    <IonLabel position="stacked">Title</IonLabel>
+                    <IonInput
+                      name="title"
+                      placeholder="e.g., Dinner with friends"
+                      value={editingDebt?.title || ""}
+                      required
                     />
-                  </div>
-                  <input type="hidden" name="dueDate" value={dueDate} />
-                </IonItem>
+                  </IonItem>
 
-                <IonItem>
-                  <IonLabel position="stacked">Description (optional)</IonLabel>
-                  <IonTextarea
-                    name="description"
-                    placeholder="Additional notes..."
-                    value={editingDebt?.description || ""}
-                    rows={3}
-                  />
-                </IonItem>
-              </IonList>
+                  <IonItem>
+                    <IonLabel position="stacked">Type</IonLabel>
+                    <IonSelect
+                      name="debtType"
+                      interface="popover"
+                      interfaceOptions={{ cssClass: "select-pop" }}
+                      value={editingDebt?.debtType || "i_owe"}
+                      required
+                    >
+                      <IonSelectOption value="i_owe">
+                        I owe money
+                      </IonSelectOption>
+                      <IonSelectOption value="owed_to_me">
+                        Someone owes me
+                      </IonSelectOption>
+                    </IonSelect>
+                  </IonItem>
+
+                  <IonItem>
+                    <IonLabel position="stacked">Person Name</IonLabel>
+                    <IonInput
+                      name="personName"
+                      placeholder="e.g., John Doe"
+                      value={editingDebt?.personName || ""}
+                      required
+                    />
+                  </IonItem>
+
+                  <IonItem>
+                    <IonLabel position="stacked">Company (optional)</IonLabel>
+                    <IonInput
+                      name="companyName"
+                      placeholder="e.g., Company Inc."
+                      value={editingDebt?.companyName || ""}
+                    />
+                  </IonItem>
+
+                  <IonItem>
+                    <IonLabel position="stacked">Amount ($)</IonLabel>
+                    <IonInput
+                      name="amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={
+                        editingDebt
+                          ? (editingDebt.amountCents / 100).toFixed(2)
+                          : ""
+                      }
+                      required
+                    />
+                  </IonItem>
+
+                  <IonItem>
+                    <IonLabel position="stacked">Due Date (optional)</IonLabel>
+                    <div slot="end">
+                      <IonDatetimeButton
+                        datetime="debt-due-date"
+                        className="dt-trigger"
+                      />
+                    </div>
+                    <input type="hidden" name="dueDate" value={dueDate} />
+                  </IonItem>
+
+                  <IonItem>
+                    <IonLabel position="stacked">
+                      Description (optional)
+                    </IonLabel>
+                    <IonTextarea
+                      name="description"
+                      placeholder="Additional notes..."
+                      value={editingDebt?.description || ""}
+                      rows={3}
+                    />
+                  </IonItem>
+                </IonList>
+              </div>
 
               <IonModal keepContentsMounted className="dt-pop">
                 <IonDatetime
@@ -408,7 +444,7 @@ export default function Debts() {
                 </IonButton>
               </div>
             </form>
-          </IonContent>
+          </Shell>
         </IonModal>
       </IonContent>
     </IonPage>

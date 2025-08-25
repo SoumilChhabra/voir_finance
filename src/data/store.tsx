@@ -252,24 +252,40 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
   }
 
   async function fetchDebts() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
-    const { data, error } = await supabase
-      .from("debts")
-      .select("*") // Use * temporarily to see all columns
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+      console.log("Fetching debts for user:", user.id);
 
-    if (error) throw error;
-    console.log("Fetched debts:", data); // Add this to debug
-    if (data && data.length > 0) {
-      console.log("First debt raw data:", data[0]);
-      console.log("Available keys:", Object.keys(data[0]));
+      const { data, error } = await supabase
+        .from("debts")
+        .select("*") // Use * temporarily to see all columns
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching debts:", error);
+        throw error;
+      }
+
+      console.log("Fetched debts:", data); // Add this to debug
+      if (data && data.length > 0) {
+        console.log("First debt raw data:", data[0]);
+        console.log("Available keys:", Object.keys(data[0]));
+      }
+      setDebts((data ?? []).map(mapDebt));
+    } catch (error) {
+      console.error("Error in fetchDebts:", error);
+      if (error instanceof Error) {
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      throw error;
     }
-    setDebts((data ?? []).map(mapDebt));
   }
 
   useEffect(() => {
@@ -474,15 +490,18 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
 
   // --- Accounts ---
   const updateAccount = async (a: EditAccount) => {
-    const { error } = await supabase
-      .from("accounts")
-      .update({
+    const { error } = await supabase.from("accounts").upsert(
+      {
+        id: a.id,
         name: a.name.trim(),
         type: a.type,
         last4: a.last4?.slice(-4) || null,
         currency: a.currency || "CAD",
-      })
-      .eq("id", a.id);
+      },
+      {
+        onConflict: "id",
+      }
+    );
 
     if (error) throw error;
     await fetchAccounts(); // refresh list
@@ -505,13 +524,16 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
 
   // --- Categories ---
   const updateCategory = async (c: EditCategory) => {
-    const { error } = await supabase
-      .from("categories")
-      .update({
+    const { error } = await supabase.from("categories").upsert(
+      {
+        id: c.id,
         name: c.name.trim(),
         color: c.color?.trim() || null,
-      })
-      .eq("id", c.id);
+      },
+      {
+        onConflict: "id",
+      }
+    );
 
     if (error) throw error;
     await fetchCategories();
@@ -609,14 +631,35 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
       }
       console.log("User authenticated:", user.id);
 
-      // Use a simple update operation with just the status change
+      // First, fetch the existing debt to get all required fields
+      const { data: existingDebt, error: fetchError } = await supabase
+        .from("debts")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching existing debt:", fetchError);
+        throw fetchError;
+      }
+
+      if (!existingDebt) {
+        throw new Error("Debt not found");
+      }
+
+      // Use upsert with all fields to ensure RLS policies work correctly
       const { data, error } = await supabase
         .from("debts")
-        .update({
-          status: "paid",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", id)
+        .upsert(
+          {
+            ...existingDebt,
+            status: "paid",
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "id",
+          }
+        )
         .select();
 
       if (error) {
@@ -629,17 +672,55 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
       await fetchDebts();
     } catch (error) {
       console.error("Error in markDebtAsPaid:", error);
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
       throw error;
     }
   };
 
   const markDebtAsPartiallyPaid = async (id: string) => {
-    const { error } = await supabase
-      .from("debts")
-      .update({ status: "partially_paid" })
-      .eq("id", id);
-    if (error) throw error;
-    await fetchDebts();
+    try {
+      // First, fetch the existing debt to get all required fields
+      const { data: existingDebt, error: fetchError } = await supabase
+        .from("debts")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching existing debt:", fetchError);
+        throw fetchError;
+      }
+
+      if (!existingDebt) {
+        throw new Error("Debt not found");
+      }
+
+      // Use upsert with all fields to ensure RLS policies work correctly
+      const { data, error } = await supabase
+        .from("debts")
+        .upsert(
+          {
+            ...existingDebt,
+            status: "partially_paid",
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "id",
+          }
+        )
+        .select();
+
+      if (error) throw error;
+      await fetchDebts();
+    } catch (error) {
+      console.error("Error in markDebtAsPartiallyPaid:", error);
+      throw error;
+    }
   };
 
   const value = useMemo(

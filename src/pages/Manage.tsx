@@ -1,7 +1,7 @@
 import React from "react";
 import {
-  IonContent,
   IonPage,
+  IonContent,
   IonList,
   IonItem,
   IonLabel,
@@ -20,7 +20,7 @@ import Shell from "../components/Shell";
 const Manage: React.FC = () => {
   return (
     <IonPage>
-      <IonContent fullscreen>
+      <IonContent scrollY={false}>
         <Shell title="Manage" className="compact-header">
           <IonList inset>
             <IonItem button routerLink="/tabs/accounts" className="manage-item">
