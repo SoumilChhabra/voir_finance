@@ -45,7 +45,7 @@ export default function EditAccount({ id: propId, onClose, asPage }: Props) {
     const handleResize = () => {
       const currentHeight = window.innerHeight;
       const heightDifference = initialHeight - currentHeight;
-      
+
       // If height decreased significantly, keyboard is likely open
       if (heightDifference > 150) {
         setIsKeyboardOpen(true);

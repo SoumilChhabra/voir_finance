@@ -313,6 +313,15 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
     fetchDebts().catch(console.error);
   }, []);
 
+  useEffect(() => {
+    const handler = () => {
+      const el = document.activeElement as HTMLElement | null;
+      if (el && el.blur) el.blur();
+    };
+    window.addEventListener("ionRouteWillChange", handler);
+    return () => window.removeEventListener("ionRouteWillChange", handler);
+  }, []);
+
   async function setPlanned(categoryId: string, dollars: string) {
     if (!period) throw new Error("No budget period");
     const planned_cents = Math.round(parseFloat(dollars || "0") * 100);
@@ -490,22 +499,33 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
 
   // --- Accounts ---
   const updateAccount = async (a: EditAccount) => {
-    const { error } = await supabase.from("accounts").upsert(
-      {
-        id: a.id,
-        name: a.name.trim(),
-        type: a.type,
-        last4: a.last4?.slice(-4) || null,
-        currency: a.currency || "CAD",
-      },
-      {
-        onConflict: "id",
-      }
-    );
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
+    if (authErr) throw authErr;
+    if (!user) throw new Error("Not authenticated");
 
-    if (error) throw error;
-    await fetchAccounts(); // refresh list
-    await fetchTransactions(); // in case currency/type affects views
+    const payload = {
+      id: a.id,
+      user_id: user.id, // ensure RLS passes on potential insert
+      name: a.name.trim(),
+      type: a.type,
+      last4: a.last4?.slice(-4) || null,
+      currency: a.currency || "CAD",
+    };
+
+    const { error } = await supabase
+      .from("accounts")
+      .upsert(payload, { onConflict: "id" });
+
+    if (error) {
+      console.error("Upsert account error", error);
+      throw error;
+    }
+
+    await fetchAccounts();
+    await fetchTransactions(); // currency/type might affect derived views
   };
 
   const deleteAccount = async (id: string) => {
@@ -524,32 +544,62 @@ export const StoreProvider = ({ children }: { children?: React.ReactNode }) => {
 
   // --- Categories ---
   const updateCategory = async (c: EditCategory) => {
-    const { error } = await supabase.from("categories").upsert(
-      {
-        id: c.id,
-        name: c.name.trim(),
-        color: c.color?.trim() || null,
-      },
-      {
-        onConflict: "id",
-      }
-    );
+    const {
+      data: { user },
+      error: authErr,
+    } = await supabase.auth.getUser();
+    if (authErr) throw authErr;
+    if (!user) throw new Error("Not authenticated");
 
-    if (error) throw error;
-    await fetchCategories();
+    const payload = {
+      id: c.id,
+      user_id: user.id, // required so INSERT part passes RLS
+      name: c.name.trim(),
+      color: c.color?.trim() || null,
+    };
+
+    const { error } = await supabase
+      .from("categories")
+      .upsert(payload, { onConflict: "id" }); // uses POST instead of PATCH
+
+    if (error) {
+      console.error("Upsert category error", error);
+      throw error;
+    }
+
+    await fetchCategories(); // ensure categories list refreshes
   };
 
   const deleteCategory = async (id: string) => {
-    // non-destructive: keep transactions, null the category
-    const upd = await supabase
+    // Step 1: Get all transactions that belong to this category
+    const { data: txs, error: fetchErr } = await supabase
       .from("transactions")
-      .update({ category_id: null })
+      .select("*")
       .eq("category_id", id);
-    if (upd.error) throw upd.error;
 
-    const del = await supabase.from("categories").delete().eq("id", id);
-    if (del.error) throw del.error;
+    if (fetchErr) throw fetchErr;
 
+    // Step 2: Null out category_id using upsert instead of update (avoids PATCH)
+    if (txs && txs.length > 0) {
+      const cleared = txs.map((t) => ({
+        ...t,
+        category_id: null,
+      }));
+
+      const { error: upsertErr } = await supabase
+        .from("transactions")
+        .upsert(cleared, { onConflict: "id" }); // replaces update()
+      if (upsertErr) throw upsertErr;
+    }
+
+    // Step 3: Delete the category
+    const { error: delErr } = await supabase
+      .from("categories")
+      .delete()
+      .eq("id", id);
+    if (delErr) throw delErr;
+
+    // Step 4: Refresh state
     await fetchCategories();
     await fetchTransactions();
   };

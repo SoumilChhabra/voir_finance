@@ -9,6 +9,9 @@ import {
   IonButton,
   IonIcon,
   IonSearchbar,
+  useIonAlert,
+  useIonToast,
+  IonModal,
 } from "@ionic/react";
 import { useParams, useHistory } from "react-router";
 import { chevronBack } from "ionicons/icons";
@@ -20,23 +23,54 @@ import { sortNewest } from "../utils/tx";
 import { formatDateLocal } from "../utils/date";
 import { useState } from "react";
 import { txMatchesQuery } from "../utils/search";
+import ItemActions from "../components/ItemActions";
+import EditTransaction from "./EditTransaction";
 
 export default function AccountDetail() {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
-  const { transactions, accountById, categoryById } = useStore();
+  const { transactions, accountById, categoryById, deleteTransaction } =
+    useStore();
   const account = accountById[id];
 
   const txns = transactions.filter((t) => t.accountId === id).sort(sortNewest);
 
   // search query
   const [query, setQuery] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [presentAlert] = useIonAlert();
+  const [toast] = useIonToast();
 
   const filtered = txns.filter((t) =>
     txMatchesQuery(t, query, accountById, categoryById)
   );
 
   const total = filtered.reduce((s, t) => s + t.amountCents, 0);
+
+  const confirmDelete = (txId: string) =>
+    presentAlert({
+      header: "Delete transaction?",
+      message: "This cannot be undone.",
+      buttons: [
+        { text: "Cancel", role: "cancel" },
+        {
+          text: "Delete",
+          role: "destructive",
+          handler: async () => {
+            try {
+              await deleteTransaction(txId);
+              toast({ message: "Deleted", duration: 1200 });
+            } catch (e: any) {
+              toast({
+                message: e.message ?? "Failed to delete",
+                color: "danger",
+                duration: 2000,
+              });
+            }
+          },
+        },
+      ],
+    });
 
   return (
     <IonPage>
@@ -85,9 +119,24 @@ export default function AccountDetail() {
                 <IonNote slot="end" className="money">
                   {formatCurrency(t.amountCents, t.currency)}
                 </IonNote>
+                <ItemActions
+                  onEdit={() => setEditId(t.id)}
+                  onDelete={() => confirmDelete(t.id)}
+                />
               </IonItem>
             ))}
           </IonList>
+
+          <IonModal
+            isOpen={!!editId}
+            onDidDismiss={() => setEditId(null)}
+            className="dialog-modal"
+            backdropDismiss
+          >
+            {editId && (
+              <EditTransaction id={editId} onClose={() => setEditId(null)} />
+            )}
+          </IonModal>
         </Shell>
       </IonContent>
     </IonPage>

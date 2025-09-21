@@ -9,9 +9,6 @@ import {
   IonButton,
   IonIcon,
   IonModal,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
   useIonAlert,
   useIonToast,
 } from "@ionic/react";
@@ -24,6 +21,7 @@ import AddAccount from "./AddAccount";
 import EditAccount from "./EditAccount";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useHistory } from "react-router";
+import ItemActions from "../components/ItemActions";
 
 export default function Accounts() {
   const { accounts, transactions, deleteAccount } = useStore();
@@ -36,30 +34,9 @@ export default function Accounts() {
   const [presentAlert] = useIonAlert();
   const [toast] = useIonToast();
 
-  // Refs for all sliding items to reset their position
-  const slidingRefs = useRef<{ [key: string]: HTMLIonItemSlidingElement }>({});
-
   const location = useLocation();
   const history = useHistory();
   const openedFromParam = useRef(false);
-
-  // Function to reset all sliding items to closed position
-  const resetAllSlidingItems = () => {
-    Object.values(slidingRefs.current).forEach((slidingRef) => {
-      if (slidingRef) {
-        slidingRef.close();
-      }
-    });
-  };
-
-  // Handle edit modal close and reset sliding items
-  const handleEditClose = () => {
-    setEditId(null);
-    // Reset all sliding items to closed position
-    setTimeout(() => {
-      resetAllSlidingItems();
-    }, 100);
-  };
 
   // Auto-open Add modal if ?add=1 is present or if user has no accounts yet
   useEffect(() => {
@@ -135,42 +112,24 @@ export default function Accounts() {
               {accounts.map((a) => {
                 const total = totals.get(a.id) ?? 0;
                 return (
-                  <IonItemSliding
+                  <IonItem
                     key={a.id}
-                    ref={(el) => {
-                      if (el) {
-                        slidingRefs.current[a.id] = el;
-                      }
-                    }}
+                    className="list-row row-lg"
+                    detail
+                    routerLink={`/account/${a.id}`}
                   >
-                    <IonItem
-                      routerLink={`/account/${a.id}`}
-                      className="list-row row-lg"
-                      detail
-                    >
-                      <IonLabel>
-                        {a.name}
-                        {a.last4 ? ` •••• ${a.last4}` : ""}
-                      </IonLabel>
-                      <IonNote slot="end" className="money">
-                        {formatCurrency(total, a.currency)}
-                      </IonNote>
-                    </IonItem>
-
-                    <IonItemOptions side="start">
-                      <IonItemOption onClick={() => setEditId(a.id)}>
-                        Edit
-                      </IonItemOption>
-                    </IonItemOptions>
-                    <IonItemOptions side="end">
-                      <IonItemOption
-                        color="danger"
-                        onClick={() => confirmDelete(a.id)}
-                      >
-                        Delete
-                      </IonItemOption>
-                    </IonItemOptions>
-                  </IonItemSliding>
+                    <IonLabel>
+                      {a.name}
+                      {a.last4 ? ` •••• ${a.last4}` : ""}
+                    </IonLabel>
+                    <IonNote slot="end" className="money">
+                      {formatCurrency(total, a.currency)}
+                    </IonNote>
+                    <ItemActions
+                      onEdit={() => setEditId(a.id)}
+                      onDelete={() => confirmDelete(a.id)}
+                    />
+                  </IonItem>
                 );
               })}
             </IonList>
@@ -189,11 +148,13 @@ export default function Accounts() {
           {/* Edit modal */}
           <IonModal
             isOpen={!!editId}
-            onDidDismiss={handleEditClose}
+            onDidDismiss={() => setEditId(null)}
             className="dialog-modal"
             backdropDismiss
           >
-            {editId && <EditAccount id={editId} onClose={handleEditClose} />}
+            {editId && (
+              <EditAccount id={editId} onClose={() => setEditId(null)} />
+            )}
           </IonModal>
         </Shell>
       </IonContent>

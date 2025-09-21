@@ -39,7 +39,7 @@ export default function EditCategory({ id: propId, onClose, asPage }: Props) {
     const handleResize = () => {
       const currentHeight = window.innerHeight;
       const heightDifference = initialHeight - currentHeight;
-      
+
       // If height decreased significantly, keyboard is likely open
       if (heightDifference > 150) {
         setIsKeyboardOpen(true);
@@ -99,12 +99,24 @@ export default function EditCategory({ id: propId, onClose, asPage }: Props) {
 
   const onSave = async () => {
     if (!canSave) return;
-    await updateCategory({
-      id: id as string,
-      name,
-      color,
-    });
-    handleClose();
+
+    try {
+      await updateCategory({
+        id: id as string,
+        name,
+        color,
+      });
+      handleClose();
+    } catch (error: any) {
+      console.error("Failed to update category:", error);
+
+      // Show user-friendly error message
+      if (error.code === "PGRST301" || error.message?.includes("403")) {
+        alert("You do not have permission to edit this category.");
+      } else {
+        alert("Failed to update category. Please try again.");
+      }
+    }
   };
 
   const Body = (

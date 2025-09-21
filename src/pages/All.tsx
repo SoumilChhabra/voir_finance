@@ -10,9 +10,6 @@ import {
   IonFabButton,
   IonIcon,
   IonButton,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
   useIonAlert,
   useIonToast,
   IonModal,
@@ -29,7 +26,7 @@ import { useState, useRef, useEffect } from "react";
 import AddTransaction from "./AddTransaction";
 import EditTransaction from "./EditTransaction";
 import { txMatchesQuery } from "../utils/search";
-import { personCircleOutline } from "ionicons/icons";
+import ItemActions from "../components/ItemActions";
 
 export default function All() {
   const {
@@ -56,12 +53,9 @@ export default function All() {
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
-  // dropdown state
+  // dropdown state (export actions)
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLIonButtonElement>(null);
-
-  // Refs for all sliding items to reset their position
-  const slidingRefs = useRef<{ [key: string]: HTMLIonItemSlidingElement }>({});
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -127,24 +121,6 @@ export default function All() {
     setShowDropdown(!showDropdown);
   };
 
-  // Function to reset all sliding items to closed position
-  const resetAllSlidingItems = () => {
-    Object.values(slidingRefs.current).forEach((slidingRef) => {
-      if (slidingRef) {
-        slidingRef.close();
-      }
-    });
-  };
-
-  // Handle edit modal close and reset sliding items
-  const handleEditClose = () => {
-    setEditId(null);
-    // Reset all sliding items to closed position
-    setTimeout(() => {
-      resetAllSlidingItems();
-    }, 100);
-  };
-
   return (
     <IonPage>
       <IonContent fullscreen scrollY={false}>
@@ -189,7 +165,7 @@ export default function All() {
                     showDropdown ? "show" : ""
                   }`}
                 >
-                  <IonItem onClick={exportCurrentRange}>
+                  <IonItem onClick={exportCurrentRange} button detail={false}>
                     <IonIcon slot="start" icon={downloadOutline} />
                     <IonLabel>Export</IonLabel>
                   </IonItem>
@@ -219,54 +195,33 @@ export default function All() {
               const account = accountById[t.accountId];
               const category = categoryById[t.categoryId];
               return (
-                <IonItemSliding
-                  key={t.id}
-                  ref={(el) => {
-                    if (el) {
-                      slidingRefs.current[t.id] = el;
-                    }
-                  }}
-                >
-                  <IonItem detail={false} className="tx-row row-lg">
-                    <IonLabel>
-                      <h2>{t.merchant ?? "Transaction"}</h2>
-                      <p>
-                        {formatDateLocal(t.date)} · {account?.name}
-                      </p>
-                    </IonLabel>
-
-                    {category && (
-                      <IonChip
-                        slot="end"
-                        style={{ background: category.color, color: "white" }}
-                      >
-                        {category.name}
-                      </IonChip>
-                    )}
-
-                    <IonNote
+                <IonItem key={t.id} detail={false} className="tx-row row-lg">
+                  <IonLabel>
+                    <h2>{t.merchant ?? "Transaction"}</h2>
+                    <p>
+                      {formatDateLocal(t.date)} · {account?.name}
+                    </p>
+                  </IonLabel>
+                  {category && (
+                    <IonChip
                       slot="end"
-                      className="money"
-                      style={{ marginLeft: 8 }}
+                      style={{ background: category.color, color: "white" }}
                     >
-                      {formatCurrency(t.amountCents, t.currency)}
-                    </IonNote>
-                  </IonItem>
-
-                  <IonItemOptions side="start">
-                    <IonItemOption onClick={() => setEditId(t.id)}>
-                      Edit
-                    </IonItemOption>
-                  </IonItemOptions>
-                  <IonItemOptions side="end">
-                    <IonItemOption
-                      color="danger"
-                      onClick={() => confirmDelete(t.id)}
-                    >
-                      Delete
-                    </IonItemOption>
-                  </IonItemOptions>
-                </IonItemSliding>
+                      {category.name}
+                    </IonChip>
+                  )}
+                  <IonNote
+                    slot="end"
+                    className="money"
+                    style={{ marginLeft: 8 }}
+                  >
+                    {formatCurrency(t.amountCents, t.currency)}
+                  </IonNote>
+                  <ItemActions
+                    onEdit={() => setEditId(t.id)}
+                    onDelete={() => confirmDelete(t.id)}
+                  />
+                </IonItem>
               );
             })}
           </IonList>
@@ -290,12 +245,12 @@ export default function All() {
           {/* Edit modal */}
           <IonModal
             isOpen={!!editId}
-            onDidDismiss={handleEditClose}
+            onDidDismiss={() => setEditId(null)}
             className="dialog-modal"
             backdropDismiss
           >
             {editId && (
-              <EditTransaction id={editId} onClose={handleEditClose} />
+              <EditTransaction id={editId} onClose={() => setEditId(null)} />
             )}
           </IonModal>
         </Shell>
